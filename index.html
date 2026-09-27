@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tiempos San Miguel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0E1B2C; --navy-surface:#16283F; --navy-line:#263A55;
+    --gold:#E3AE3F; --paper:#FAF6EC; --ink:#1C1710;
+    --text:#E9EEF5; --text-muted:#90A4BE; --green:#4FAE7C; --red:#D66C5B;
+  }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ } }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--navy-deep); color:var(--text); font-family:'Inter',sans-serif;
+    min-height:100%; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html,body{height:100%;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:700;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:'Inter',sans-serif;}
+  .hidden{display:none !important;}
+
+  /* ---------- barra lateral ---------- */
+  .app-shell{display:flex; min-height:100vh; align-items:stretch;}
+  .sidebar{
+    width:208px; flex:none; background:var(--navy-surface); border-right:1px solid var(--navy-line);
+    display:flex; flex-direction:column; padding:20px 14px; padding-top:calc(20px + env(safe-area-inset-top,0px));
+    position:sticky; top:0; align-self:flex-start; height:100vh; overflow-y:auto;
+  }
+  .main-col{flex:1; min-width:0;}
+  .sidebar .logo{padding:0 8px; margin-bottom:20px;}
+  .sidebar-foot{
+    margin-top:auto; padding-top:14px; border-top:1px solid var(--navy-line);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media(max-width:760px){
+    .app-shell{flex-direction:column;}
+    .sidebar{
+      width:100%; height:auto; position:static; flex-direction:row; align-items:center;
+      overflow-x:auto; padding:10px 14px; gap:14px;
+    }
+    .sidebar .logo{margin-bottom:0; white-space:nowrap;}
+    .nav-links{flex-direction:row !important;}
+    .sidebar-foot{margin-top:0; margin-left:auto; padding-top:0; padding-left:14px; border-top:none; border-left:1px solid var(--navy-line); white-space:nowrap;}
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:12px 22px; padding-top:calc(12px + env(safe-area-inset-top,0px));
+    background:var(--navy-surface); border-bottom:1px solid var(--navy-line);
+    position:sticky; top:0; z-index:10;
+  }
+  .logo{display:flex; align-items:center; gap:9px; font-family:'Fraunces',serif; font-weight:700; font-size:17px;}
+  .logo span{color:var(--gold);}
+  .nav-links{display:flex; flex-direction:column; gap:3px;}
+  .nav-links button{
+    background:none; border:none; color:var(--text-muted); font-size:13.5px; font-weight:500;
+    padding:9px 12px; border-radius:7px; cursor:pointer; text-align:left;
+  }
+  .nav-links button.active{background:var(--navy-line); color:var(--text);}
+  .spacer{flex:1;}
+  .balance-pill{
+    background:rgba(79,174,124,0.12); border:1px solid rgba(79,174,124,0.4); color:var(--green);
+    font-family:'IBM Plex Mono',monospace; font-size:13px; padding:6px 13px; border-radius:20px;
+  }
+  .cr-clock{
+    background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--gold);
+    font-size:13px; padding:6px 13px; border-radius:20px; letter-spacing:0.5px;
+  }
+  .cr-clock small{color:var(--text-muted); font-family:'Inter',sans-serif; margin-right:6px; font-size:11px;}
+  .status-banner{border-radius:8px; padding:11px 13px; font-size:13px; margin-bottom:14px;}
+  .status-banner.open{background:rgba(79,174,124,0.12); border:1px solid rgba(79,174,124,0.4); color:var(--green);}
+  .status-banner.closed{background:rgba(214,108,91,0.12); border:1px solid rgba(214,108,91,0.4); color:var(--red);}
+  select:disabled, input:disabled, button:disabled{opacity:0.45; cursor:not-allowed;}
+  .user-chip{font-size:12.5px; color:var(--text-muted); display:flex; align-items:center; gap:10px;}
+  .user-chip b{color:var(--text); font-weight:600;}
+  .btn-logout{
+    background:none; border:1px solid var(--navy-line); color:var(--text-muted);
+    font-size:12px; padding:6px 12px; border-radius:7px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px; font-family:'Inter',sans-serif;
+  }
+  .btn-logout:hover{ border-color:var(--red); color:var(--red); }
+
+  /* ---------- login/register ---------- */
+  #login{
+    min-height:calc(100vh - 20px); display:flex; align-items:center; justify-content:center; padding:40px 20px;
+    background:radial-gradient(circle at 20% 20%, rgba(227,174,63,0.08), transparent 45%), var(--navy-deep);
+  }
+  .auth-card{width:100%; max-width:380px;}
+  .brand{text-align:center; margin-bottom:26px;}
+  .ticket-mark{
+    display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px;
+    border:1.5px solid var(--gold); border-radius:50%; color:var(--gold);
+    font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; margin-bottom:12px;
+  }
+  .brand h1{font-size:24px;}
+  .brand p{color:var(--text-muted); font-size:13px; margin-top:4px;}
+  .card{background:var(--navy-surface); border:1px solid var(--navy-line); border-radius:14px; padding:26px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; color:var(--text-muted); margin-bottom:5px;}
+  .field input, .field select{
+    width:100%; background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text);
+    padding:10px 11px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
+  }
+  .field input:focus, .field select:focus{outline:1.5px solid var(--gold); border-color:var(--gold);}
+  .btn-primary{
+    width:100%; background:var(--gold); color:#241a05; border:none; padding:11px; border-radius:8px;
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .btn-primary:disabled{opacity:0.5; cursor:default;}
+  .error-msg{background:rgba(214,108,91,0.12); border:1px solid rgba(214,108,91,0.4); color:var(--red);
+    padding:9px 11px; border-radius:8px; font-size:12.5px; margin-bottom:14px;}
+
+  /* ---------- layout ---------- */
+  .layout{display:grid; grid-template-columns:1fr 340px; gap:18px; padding:20px 22px; max-width:1280px; margin:0 auto;}
+  @media(max-width:880px){.layout{grid-template-columns:1fr;}}
+  .layout > div{display:flex; flex-direction:column;}
+  .layout > div > .panel:last-child{flex:1 1 auto;}
+  .panel{background:var(--navy-surface); border:1px solid var(--navy-line); border-radius:12px; padding:20px; margin-bottom:18px;}
+  .panel h3{font-size:13.5px; font-weight:600; color:var(--text-muted); margin-bottom:14px;}
+  .draw-select{width:100%; background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:14px; margin-bottom:14px;}
+
+  .bet-row{display:grid; grid-template-columns:1fr 1fr 1.2fr auto; gap:9px; align-items:end; margin-bottom:14px;}
+  .bet-row .field{margin-bottom:0;}
+  .add-btn{background:var(--gold); color:#241a05; border:none; padding:10px 15px; border-radius:8px;
+    font-weight:600; font-size:13.5px; cursor:pointer; height:38px;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--text-muted); font-weight:500; font-size:12px; padding:6px 8px; border-bottom:1px solid var(--navy-line);}
+  td{padding:8px; border-bottom:1px solid var(--navy-line);}
+  .empty-note{border:1px dashed var(--navy-line); border-radius:8px; padding:14px; text-align:center; color:var(--text-muted); font-size:13px;}
+  .del-x{background:none; border:none; color:var(--red); cursor:pointer; font-size:14px;}
+
+  .module-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  @media(max-width:600px){.module-grid{grid-template-columns:repeat(2,1fr);}}
+  .module{background:var(--navy-deep); border:1px solid var(--navy-line); border-radius:10px; padding:14px;}
+  .module .m-label{font-size:11.5px; color:var(--text-muted); margin-bottom:5px;}
+  .module .m-value{font-family:'IBM Plex Mono',monospace; font-size:18px;}
+  .module.up .m-value{color:var(--green);}
+  .module.down .m-value{color:var(--red);}
+
+  .btn-small{background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text); padding:6px 11px;
+    border-radius:7px; font-size:12px; cursor:pointer;}
+  .btn-small.gold{background:var(--gold); color:#241a05; border:none; font-weight:600;}
+
+  .search-row{display:flex; gap:8px; margin-bottom:14px;}
+  .search-row input{flex:1; background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:14px;}
+
+  /* receipt */
+  .receipt-wrap{background:var(--paper); color:var(--ink); border-radius:4px; padding:14px 10px;
+    font-family:'IBM Plex Mono',monospace; font-size:20px; line-height:1.6;}
+  .receipt-wrap .center{text-align:center;}
+  .receipt-wrap hr{border:none; border-top:1px dashed #b7ac93; margin:10px 0;}
+  .receipt-wrap .row{display:flex; justify-content:space-between;}
+  .receipt-wrap .big{font-size:26px; font-weight:600;}
+  .receipt-wrap .small{font-size:15px; line-height:1.5;}
+
+  .warn-banner{
+    background:rgba(214,108,91,0.12); border:1px solid var(--red); color:#e8b3a8;
+    padding:10px 12px; border-radius:8px; font-size:12.5px; line-height:1.5; margin-bottom:14px;
+  }
+
+  @media print{
+    @page{ size:100mm auto; margin:0; }
+    html, body{ width:100mm; height:auto; margin:0 !important; padding:0 !important; }
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{
+      position:absolute; top:0; left:0; width:100mm; box-sizing:border-box;
+      padding:2mm 3mm; margin:0 !important;
+      font-size:18pt !important; line-height:1.45 !important;
+    }
+    #printArea .big{ font-size:24pt !important; }
+    #printArea .small{ font-size:14pt !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<section id="login">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="ticket-mark">SM</div>
+      <h1>Tiempos San Miguel</h1>
+      <p>Ingresá tus credenciales para continuar</p>
+    </div>
+    <div class="card">
+      <div id="loginError" class="error-msg hidden"></div>
+      <div class="field"><label>Correo</label><input id="loginEmail" type="text" placeholder="example@sanmiguel.com" onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('loginPass').focus(); }"></div>
+      <div class="field"><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter'){ event.preventDefault(); App.login(); }"></div>
+      <button class="btn-primary" onclick="App.login()">Ingresar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== APP ===================== -->
+<section id="app" class="hidden">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="logo"><span>SM</span>Tiempos San Miguel</div>
+      <div class="nav-links">
+        <button data-tab="ventas" class="active">Ventas</button>
+        <button data-tab="finanzas">Finanzas</button>
+        <button data-tab="pagos">Pagos</button>
+        <button data-tab="reportes">Reportes</button>
+        <button data-tab="resultados">Resultados</button>
+        <button data-tab="usuarios" id="navUsuarios" class="hidden">Usuarios</button>
+      </div>
+      <div class="sidebar-foot">
+        <div class="user-chip" style="margin-bottom:10px;">Usuario: <b id="userName">—</b></div>
+        <button class="btn-logout" style="width:100%; justify-content:center;" onclick="App.logout()">⏻ Salir</button>
+      </div>
+    </aside>
+    <div class="main-col">
+    <div class="topbar">
+      <div class="spacer"></div>
+      <div class="cr-clock"><small>Hora Costa Rica</small><span id="crClock">--:--:--</span></div>
+      <div class="balance-pill">Balance <span id="balanceTop" class="mono">₡0.00</span></div>
+    </div>
+
+  <!-- VENTAS -->
+  <div class="layout tab-panel" data-tab="ventas">
+    <div>
+      <div class="panel">
+        <h3>Nueva venta</h3>
+        <select id="drawSelect" class="draw-select" onchange="App.onDrawChange()"></select>
+        <div id="drawStatus" class="status-banner hidden"></div>
+
+        <div class="bet-row" id="betRowContainer" style="grid-template-columns:1fr 1fr 1.2fr auto auto;">
+          <div class="field"><label>Monto</label><input id="amtInput" type="number" min="50" step="50" placeholder="mín. 50, de 50 en 50" inputmode="numeric" onkeydown="App.moveNext(event,'numInput')"></div>
+          <div class="field"><label>Número</label><input id="numInput" placeholder="05" maxlength="2" inputmode="numeric" oninput="App.onlyDigits(this)" onkeydown="App.moveNext(event,'revInput')"></div>
+          <div class="field" id="revFieldWrapper"><label>Reventado</label><input id="revInput" type="number" min="50" step="50" placeholder="opcional, de 50 en 50" inputmode="numeric" onkeydown="App.moveNext(event,null)"></div>
+          <button type="button" class="btn-small" style="height:38px;" onclick="App.randomNumber()" title="Número aleatorio entre 00 y 99">🎲 Aleatorio</button>
+          <button class="add-btn" onclick="App.addLine()">Agregar</button>
+        </div>
+
+        <div id="linesEmpty" class="empty-note">Agregá números y montos para armar el tiquete</div>
+        <table id="linesTable" class="hidden">
+          <thead><tr><th>Número</th><th>Monto</th><th>Reventado</th><th></th></tr></thead>
+          <tbody id="linesBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>Total del tiquete: <b class="mono" id="ticketTotal">₡0.00</b></div>
+          <button class="btn-small gold" id="btnConfirmSale" onclick="App.confirmSale()">Ingresar venta</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h3>Resumen del día</h3>
+        <div class="module-grid">
+          <div class="module up"><div class="m-label">Vendido hoy</div><div class="m-value mono" id="soldToday">₡0.00</div></div>
+          <div class="module"><div class="m-label">Tiquetes hoy</div><div class="m-value mono" id="ticketsToday">0</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINANZAS -->
+  <div class="layout tab-panel hidden" data-tab="finanzas">
+    <div>
+      <div class="panel">
+        <h3>Movimientos</h3>
+        <div id="riskBanner" class="warn-banner hidden"></div>
+        <div class="bet-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto; margin-bottom:14px;">
+          <div class="field"><label>Desde</label><input id="movDateFrom" type="date" onchange="App.renderAll()"></div>
+          <div class="field"><label>Hasta</label><input id="movDateTo" type="date" onchange="App.renderAll()"></div>
+          <div class="field">
+            <label>Tipo</label>
+            <select id="movType" onchange="App.renderAll()">
+              <option value="">Todos</option>
+              <option value="Ingreso">Ingreso</option>
+              <option value="Pago">Pago a ganador</option>
+              <option value="Gasto">Gasto</option>
+            </select>
+          </div>
+          <div class="field" id="movOwnerField">
+            <label>Negocio</label>
+            <select id="movOwner" onchange="App.renderAll()">
+              <option value="">Todos</option>
+              <option value="libreria">Librería</option>
+              <option value="supermercado">Supermercado</option>
+            </select>
+          </div>
+          <button class="btn-small" style="height:38px;" onclick="App.clearMovFilters()">Quitar filtros</button>
+        </div>
+        <div id="movEmpty" class="empty-note">Aún no hay movimientos registrados</div>
+        <table id="movTable" class="hidden">
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Vendedor</th><th>Detalle</th><th>Monto</th><th></th></tr></thead>
+          <tbody id="movBody"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>Resumen por sorteo</h3>
+        <div id="drawSummaryEmpty" class="empty-note">Todavía no hay ventas registradas para resumir</div>
+        <table id="drawSummaryTable" class="hidden">
+          <thead><tr><th>Sorteo</th><th>Vendido</th><th>Pagado en premios</th><th>Margen</th></tr></thead>
+          <tbody id="drawSummaryBody"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>Resumen por día</h3>
+        <div id="daySummaryEmpty" class="empty-note">Todavía no hay movimientos para resumir</div>
+        <table id="daySummaryTable" class="hidden">
+          <thead><tr><th>Fecha</th><th>Vendido</th><th>Premios</th><th>Gastos</th><th>Margen neto</th></tr></thead>
+          <tbody id="daySummaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="panel hidden" id="adminBreakdown">
+        <h3>Balance por negocio</h3>
+        <div class="module-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="module up"><div class="m-label">Librería</div><div class="m-value mono" id="balLibreria">₡0.00</div></div>
+          <div class="module up"><div class="m-label">Supermercado</div><div class="m-value mono" id="balSuper">₡0.00</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Balance general</h3>
+        <div class="module-grid" style="grid-template-columns:1fr;">
+          <div class="module up"><div class="m-label">Balance actual</div><div class="m-value mono" id="balanceFull">₡0.00</div></div>
+          <div class="module"><div class="m-label">Total ingresos</div><div class="m-value mono" id="totalIn">₡0.00</div></div>
+          <div class="module down"><div class="m-label">Total pagado</div><div class="m-value mono" id="totalOut">₡0.00</div></div>
+        </div>
+      </div>
+      <div class="panel hidden" id="limitsPanel">
+        <h3>Límite de apuesta</h3>
+        <div class="field"><label>Monto máximo por número (directo + reventado juntos)</label><input id="maxBetInput" type="number" min="50" step="50" placeholder="20000"></div>
+        <button class="btn-small" style="width:100%;" onclick="App.saveMaxBet()">Guardar límite en la Nube</button>
+      </div>
+      <div class="panel">
+        <h3>Registrar gasto</h3>
+        <div class="field" id="gastoOwnerField">
+          <label>Negocio</label>
+          <select id="gastoOwner">
+            <option value="libreria">Librería</option>
+            <option value="supermercado">Supermercado</option>
+          </select>
+        </div>
+        <div class="field"><label>Categoría</label>
+          <select id="gastoCategoria">
+            <option>Papel de impresora</option>
+            <option>Comisión</option>
+            <option>Electricidad</option>
+            <option>Internet</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field"><label>Detalle (opcional)</label><input id="gastoDetalle" placeholder="ej. rollo de 80mm"></div>
+        <div class="field"><label>Monto</label><input id="gastoMonto" type="number" min="0" step="1" placeholder="0"></div>
+        <button class="btn-small gold" style="width:100%;" onclick="App.registerExpense()">Registrar gasto</button>
+      </div>
+      <div class="panel">
+        <h3>Cierre de caja</h3>
+        <div class="field" id="cierreOwnerField">
+          <label>Negocio</label>
+          <select id="cierreOwner">
+            <option value="libreria">Librería</option>
+            <option value="supermercado">Supermercado</option>
+          </select>
+        </div>
+        <div class="field"><label>Efectivo contado</label><input id="cierreEfectivo" type="number" min="0" step="1" placeholder="0"></div>
+        <button class="btn-small" style="width:100%;" onclick="App.saveCierre()">Registrar corte de caja</button>
+        <div id="cierreEmpty" class="empty-note" style="margin-top:12px;">Todavía no hay cortes registrados</div>
+        <table id="cierreTable" class="hidden">
+          <thead><tr><th>Fecha</th><th>Negocio</th><th>Sistema</th><th>Contado</th><th>Diferencia</th></tr></thead>
+          <tbody id="cierreBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGOS -->
+  <div class="layout tab-panel hidden" data-tab="pagos">
+    <div>
+      <div class="panel">
+        <h3>Pago a ganadores</h3>
+        <div class="search-row" style="gap:0;">
+          <span class="mono" style="background:var(--navy-line); border:1px solid var(--navy-line); border-right:none; padding:0 10px; border-radius:8px 0 0 8px; color:var(--text-muted); font-size:13.5px; display:flex; align-items:center;">TSM-</span>
+          <input id="payTicketId" placeholder="AAA-00001" style="border-radius:0; margin-right:8px;">
+          <button class="btn-small gold" onclick="App.findTicketForPay()">Buscar</button>
+        </div>
+        <div id="payResult" class="empty-note">Ingresá un número de tiquete para buscarlo</div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <h3>Ayuda</h3>
+        <div style="font-size:12.5px; color:var(--text-muted); line-height:1.7;">
+          El número de tiquete se genera automáticamente al confirmar cada venta (ej. TSM-AAA-00001) y aparece impreso en el comprobante térmico.
+          Solo se puede registrar el pago de un tiquete cuando ya se cargó el resultado de su sorteo. Una vez pagado, el sistema no permite volver a cobrarlo.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTES -->
+  <div class="layout tab-panel hidden" data-tab="reportes">
+    <div>
+      <div class="panel">
+        <h3>Tiquetes emitidos</h3>
+        <div class="search-row" style="gap:0;">
+          <span class="mono" style="background:var(--navy-line); border:1px solid var(--navy-line); border-right:none; padding:0 10px; border-radius:8px 0 0 8px; color:var(--text-muted); font-size:13.5px; display:flex; align-items:center;">TSM-</span>
+          <input id="repSearch" placeholder="AAA-00001" style="border-radius:0 8px 8px 0;" oninput="App.renderAll()">
+        </div>
+        <div class="bet-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto; margin-bottom:14px;">
+          <div class="field"><label>Desde</label><input id="repDateFrom" type="date" onchange="App.renderAll()"></div>
+          <div class="field"><label>Hasta</label><input id="repDateTo" type="date" onchange="App.renderAll()"></div>
+          <div class="field">
+            <label>Sorteo</label>
+            <select id="repDraw" onchange="App.renderAll()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Premio</label>
+            <select id="repPremio" onchange="App.renderAll()">
+              <option value="">Todos</option>
+              <option value="premiado">Premiado</option>
+              <option value="no_premiado">No premiado</option>
+              <option value="sin_resultado">Sin resultado todavía</option>
+            </select>
+          </div>
+          <button class="btn-small" style="height:38px;" onclick="App.clearReportFilters()">Quitar filtros</button>
+        </div>
+        <div id="repEmpty" class="empty-note">No hay tiquetes emitidos todavía</div>
+        <table id="repTable" class="hidden">
+          <thead><tr><th>Tiquete</th><th>Sorteo</th><th>Vendedor</th><th>Total</th><th>Premio</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="repBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="panel" style="padding:0; overflow:hidden;">
+        <h3 style="padding:16px 16px 0;">Vista de impresión · 100mm</h3>
+        <div id="printArea" class="receipt-wrap">
+          <div class="center big">TIEMPOS SAN MIGUEL</div>
+          <div class="center">Seleccioná un tiquete para verlo aquí</div>
+        </div>
+        <div style="padding:14px 16px; display:flex; gap:8px;">
+          <button class="btn-small gold" style="flex:1;" onclick="window.print()">Imprimir tiquete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="layout tab-panel hidden" data-tab="resultados">
+    <div>
+      <div class="panel">
+        <h3>Resultados registrados</h3>
+        <div id="resEmpty" class="empty-note">Todavía no hay resultados registrados</div>
+        <table id="resTable" class="hidden">
+          <thead><tr><th>Sorteo</th><th>Fecha</th><th>Número</th><th>Reventado</th><th></th></tr></thead>
+          <tbody id="resBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <h3>Registrar resultado del sorteo</h3>
+        <div class="field"><label>Sorteo</label><select id="resDraw" class="draw-select"></select></div>
+        <div class="field"><label>Fecha (Costa Rica)</label><input id="resDate" type="date"></div>
+        <div class="bet-row" style="grid-template-columns:1fr 1fr;">
+          <div class="field"><label>Número ganador</label><input id="resNumero" placeholder="05" maxlength="2" inputmode="numeric" oninput="App.onlyDigits(this)"></div>
+          <div class="field"><label>Reventado (Obligatorio: br / bb)</label>
+            <select id="resReventadoType">
+              <option value="">Seleccionar...</option>
+              <option value="br">br (Bola Reventada)</option>
+              <option value="bb">bb (Bola Blanca)</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-small gold" onclick="App.saveResult()">Guardar resultado</button>
+        <div style="font-size:11.5px; color:var(--text-muted); margin-top:10px; line-height:1.6;">
+          Al guardar se recalcula automáticamente el premio de todos los tiquetes de ese sorteo y esa fecha en la base de datos de Firestore.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GESTIÓN DE USUARIOS (ADMIN) -->
+  <div class="layout tab-panel hidden" data-tab="usuarios">
+    <div>
+      <div class="panel">
+        <h3>Crear nuevo usuario / vendedor</h3>
+        <div class="field"><label>Correo Electrónico</label><input id="newUsrEmail" type="email" placeholder="vendedor@sanmiguel.com"></div>
+        <div class="field"><label>Contraseña temporal</label><input id="newUsrPass" type="password" placeholder="Mínimo 6 caracteres"></div>
+        <div class="field"><label>Nombre completo</label><input id="newUsrName" placeholder="Juan Pérez"></div>
+        <div class="field">
+          <label>Rol / Negocio</label>
+          <select id="newUsrRole">
+            <option value="libreria">Librería</option>
+            <option value="supermercado">Supermercado</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <button class="btn-small gold" onclick="App.createUserAccount()">Crear Cuenta en el Sistema</button>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <h3>Información</h3>
+        <div style="font-size:12.5px; color:var(--text-muted); line-height:1.7;">
+          Aquí puedes registrar nuevos usuarios para que inicien sesión en la aplicación. Asegúrate de asignarles el rol correcto para que filtren automáticamente sus ventas e ingresos según corresponda.
+        </div>
+      </div>
+    </div>
+  </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= MÓDULO FIREBASE V10 ================= -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import { 
+    initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, addDoc, 
+    updateDoc, deleteDoc, collection, onSnapshot, query, where, runTransaction 
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDl0NPag3aKGAnwZDRW--IpWQewwhyb3HY",
+    authDomain: "tiempos-san-miguel.firebaseapp.com",
+    projectId: "tiempos-san-miguel",
+    storageBucket: "tiempos-san-miguel.firebasestorage.app",
+    messagingSenderId: "774681656050",
+    appId: "1:774681656050:web:a199acf3b9c76337aeae6b"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const fbAuth = getAuth(fbApp);
+  const fbDb = initializeFirestore(fbApp, { localCache: persistentLocalCache() });
+
+  window.firebaseAuth = {
+    signIn: (email, pass) => signInWithEmailAndPassword(fbAuth, email, pass),
+    signOut: () => signOut(fbAuth),
+    onChange: (cb) => onAuthStateChanged(fbAuth, cb),
+    getUserDoc: (uid) => getDoc(doc(fbDb, 'usuarios', uid)),
+    createUser: async (email, pass, name, role) => {
+      import("https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js").then(async ({initializeApp: initSec, deleteApp}) => {
+      });
+    }
+  };
+
+  window.createNewUserAccount = async (email, pass, name, role) => {
+    const secondaryApp = initializeApp(firebaseConfig, "SecondaryAppForCreation");
+    const secondaryAuth = getAuth(secondaryApp);
+    try {
+      const userCred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+      const uid = userCred.user.uid;
+      await setDoc(doc(fbDb, 'usuarios', uid), { name, role, email });
+      await signOut(secondaryAuth);
+      await deleteApp(secondaryApp);
+      return true;
+    } catch(err) {
+      try { deleteApp(secondaryApp); } catch(e){}
+      throw err;
+    }
+  };
+
+  window.fs = { 
+    db: fbDb, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, 
+    onSnapshot, query, where, runTransaction 
+  };
+
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<!-- ================= LÓGICA DE APLICACIÓN ================= -->
+<script>
+function ownerLabel(role){
+  return role==='libreria' ? 'Librería' : role==='supermercado' ? 'Supermercado' : role==='admin' ? 'Administración' : (role||'—');
+}
+
+const CLAIM_DAYS = 7;
+const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+
+function addDaysToDateStr(dateStr, days){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m-1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0,10);
+}
+function formatDMY(dateStr){
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+function getCRTime(){
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone:'America/Costa_Rica', hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'
+  }).formatToParts(new Date());
+  const get = t => parseInt(parts.find(p=>p.type===t).value, 10);
+  return { h:get('hour')===24?0:get('hour'), m:get('minute'), s:get('second') };
+}
+function crDateStr(){
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Costa_Rica'}).format(new Date());
+}
+function todayStr(){
+  const [y,m,d] = crDateStr().split('-');
+  return `${d}/${m}/${y}`;
+}
+function normalizeCode(s){ return (s||'').toUpperCase().trim().replace(/^TSM-?/,''); }
+function money(n){ return '₡' + Number(n||0).toLocaleString('es-CR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function escapeHtml(str){
+  return String(str==null ? '' : str).replace(/[&<>"']/g, c=>({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+
+const DRAWS = [
+  {key:'tica_dia',    name:'Tica Día',       country:'CR', closeH:12, closeM:55},
+  {key:'tica_tarde',  name:'Tica Tarde',     country:'CR', closeH:16, closeM:30},
+  {key:'tica_noche',  name:'Tica Noche',     country:'CR', closeH:19, closeM:30},
+  {key:'nica_manana', name:'Nica Mañana',    country:'NI', closeH:11, closeM:0},
+  {key:'nica_tarde',  name:'Nica Tarde',     country:'NI', closeH:15, closeM:0},
+  {key:'nica_vesper', name:'Nica Vespertina',country:'NI', closeH:18, closeM:0, weekendOnly:true},
+  {key:'nica_noche',  name:'Nica Noche',     country:'NI', closeH:21, closeM:0},
+];
+function getCRWeekday(){
+  const wd = new Intl.DateTimeFormat('en-US', {timeZone:'America/Costa_Rica', weekday:'short'}).format(new Date());
+  return {Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6}[wd];
+}
+function isWeekendCR(){ const wd = getCRWeekday(); return wd===0 || wd===6; }
+function isDrawActiveToday(draw){ return !draw.weekendOnly || isWeekendCR(); }
+function fmtClose(draw){
+  const h12 = ((draw.closeH+11)%12)+1;
+  const ampm = draw.closeH<12 ? 'AM':'PM';
+  return `${h12}:${String(draw.closeM).padStart(2,'0')} ${ampm}`;
+}
+function isDrawOpen(draw, now){ return (now.h*60+now.m) < (draw.closeH*60+draw.closeM); }
+function movDateKey(m){
+  if(m.crDate) return m.crDate;
+  const parts = (m.date||'').split('/');
+  return parts.length===3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+}
+
+const App = {
+  currentLines: [],
+  currentRole: null,
+  currentUid: null,
+  
+  tickets: [],
+  movs: [],
+  results: [],
+  cierres: [],
+  maxBet: 20000,
+  processedDraws: {},
+  unsubscribes: [],
+
+  init(){
+    document.querySelectorAll('.nav-links button').forEach(b=>{
+      b.addEventListener('click', ()=>App.switchTab(b.dataset.tab));
+    });
+
+    this.populateDrawSelect();
+    this.populateResultDrawSelect();
+    this.populateReportDrawSelect();
+    this.tickClock();
+    setInterval(()=>this.tickClock(), 1000);
+
+    ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(evt=>{
+      document.addEventListener(evt, ()=>this.resetInactivityTimer(), {passive:true});
+    });
+
+    const startAuthListener = () => {
+      window.firebaseAuth.onChange(async (user) => {
+        if(!user){ 
+          this.currentRole = null; 
+          this.currentUid = null; 
+          this.clearSubscriptions();
+          this.showLogin(); 
+          return; 
+        }
+        try{
+          const snap = await window.firebaseAuth.getUserDoc(user.uid);
+          if(!snap.exists()){
+            document.getElementById('loginError').textContent = 'Esta cuenta no tiene un perfil configurado en Firestore (falta el documento en /usuarios).';
+            document.getElementById('loginError').classList.remove('hidden');
+            window.firebaseAuth.signOut();
+            return;
+          }
+          this.enterApp(user, snap.data());
+        }catch(e){
+          console.error('Error cargando perfil de usuario', e);
+          document.getElementById('loginError').textContent = 'No se pudo cargar el perfil. Revisá tu conexión.';
+          document.getElementById('loginError').classList.remove('hidden');
+        }
+      });
+    };
+    if(window.firebaseAuth) startAuthListener();
+    else window.addEventListener('firebase-ready', startAuthListener, {once:true});
+  },
+
+  resetInactivityTimer(){
+    clearTimeout(this.inactivityTimer);
+    const appEl = document.getElementById('app');
+    if(!appEl || appEl.classList.contains('hidden')) return; 
+    this.inactivityTimer = setTimeout(()=>this.autoLogout(), INACTIVITY_LIMIT_MS);
+  },
+
+  autoLogout(){
+    const appEl = document.getElementById('app');
+    if(!appEl || appEl.classList.contains('hidden')) return;
+    this.logout();
+    alert('Tu sesión se cerró automáticamente por 5 minutos de inactividad.');
+  },
+
+  showLogin(){
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('login').classList.remove('hidden');
+  },
+
+  login(){
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const pass = document.getElementById('loginPass').value;
+    const err = document.getElementById('loginError');
+    if(!window.firebaseAuth){ err.textContent = 'Firebase todavía no cargó, esperá un segundo.'; err.classList.remove('hidden'); return; }
+    err.classList.add('hidden');
+    window.firebaseAuth.signIn(email, pass)
+      .catch(()=>{
+        err.textContent = 'Correo o contraseña incorrectos.';
+        err.classList.remove('hidden');
+      });
+  },
+
+  logout(){
+    clearTimeout(this.inactivityTimer);
+    if(window.firebaseAuth) window.firebaseAuth.signOut();
+  },
+
+  async enterApp(user, profile){
+    this.currentRole = profile.role;
+    this.currentUid = user.uid;
+    this.currentProfile = profile; 
+    document.getElementById('userName').textContent = `${profile.name} (${ownerLabel(this.currentRole)})`;
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    this.applyRoleUI(this.currentRole);
+    this.switchTab(this.currentRole==='admin' ? 'finanzas' : 'ventas');
+    this.resetInactivityTimer();
+    this.subscribeToFirestore();
+  },
+
+  clearSubscriptions() {
+    this.unsubscribes.forEach(u => u());
+    this.unsubscribes = [];
+    this.tickets = []; this.movs = []; this.results = []; this.cierres = [];
+  },
+
+  subscribeToFirestore() {
+    this.clearSubscriptions();
+    const role = this.currentRole;
+    const isAdmin = role === 'admin';
+
+    const unsubLim = window.fs.onSnapshot(window.fs.doc(window.fs.db, 'configuracion', 'limites'), (snap) => {
+      if(snap.exists()){
+        this.maxBet = snap.data().limiteGeneral || 20000;
+      } else {
+        this.maxBet = 20000;
+      }
+      const mbEl = document.getElementById('maxBetInput');
+      if(mbEl) mbEl.value = this.maxBet;
+    });
+    this.unsubscribes.push(unsubLim);
+
+    let qTiquetes = window.fs.collection(window.fs.db, 'tiquetes');
+    if (!isAdmin) qTiquetes = window.fs.query(qTiquetes, window.fs.where('owner', '==', role));
+    const unsubTiq = window.fs.onSnapshot(qTiquetes, (snap) => {
+      this.tickets = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      this.renderAll();
+    });
+    this.unsubscribes.push(unsubTiq);
+
+    let qMovs = window.fs.collection(window.fs.db, 'movimientos');
+    if (!isAdmin) qMovs = window.fs.query(qMovs, window.fs.where('owner', '==', role));
+    const unsubMov = window.fs.onSnapshot(qMovs, (snap) => {
+      this.movs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      this.renderAll();
+    });
+    this.unsubscribes.push(unsubMov);
+
+    const unsubRes = window.fs.onSnapshot(window.fs.collection(window.fs.db, 'resultados'), (snap) => {
+      this.results = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      this.renderResults();
+      this.renderAll();
+    });
+    this.unsubscribes.push(unsubRes);
+
+    let qCierres = window.fs.collection(window.fs.db, 'cierres');
+    if (!isAdmin) qCierres = window.fs.query(qCierres, window.fs.where('owner', '==', role));
+    const unsubCierres = window.fs.onSnapshot(qCierres, (snap) => {
+      this.cierres = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      this.renderCierres();
+    });
+    this.unsubscribes.push(unsubCierres);
+  },
+
+  async getNextSeq(type) {
+    const docRef = window.fs.doc(window.fs.db, 'contadores', type);
+    let newSeq = 1;
+    await window.fs.runTransaction(window.fs.db, async (tx) => {
+      const snap = await tx.get(docRef);
+      if(snap.exists()){
+        newSeq = (snap.data().val || 0) + 1;
+      }
+      tx.set(docRef, { val: newSeq }, { merge: true });
+    });
+    return newSeq;
+  },
+
+  applyRoleUI(role){
+    const isAdmin = role === 'admin';
+    const ventasBtn = document.querySelector('.nav-links button[data-tab="ventas"]');
+    if(ventasBtn) ventasBtn.style.display = isAdmin ? 'none' : '';
+    const resBtn = document.querySelector('.nav-links button[data-tab="resultados"]');
+    if(resBtn) resBtn.style.display = isAdmin ? '' : 'none';
+    const usrBtn = document.getElementById('navUsuarios');
+    if(usrBtn) usrBtn.classList.toggle('hidden', !isAdmin);
+
+    const adminBox = document.getElementById('adminBreakdown');
+    if(adminBox) adminBox.classList.toggle('hidden', !isAdmin);
+    const limitsBox = document.getElementById('limitsPanel');
+    if(limitsBox) limitsBox.classList.toggle('hidden', !isAdmin);
+    
+    ['movOwnerField','gastoOwnerField','cierreOwnerField'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle('hidden', !isAdmin);
+    });
+  },
+
+  switchTab(tab){
+    document.querySelectorAll('.nav-links button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('hidden', p.dataset.tab!==tab));
+  },
+
+  populateDrawSelect(){
+    const sel = document.getElementById('drawSelect');
+    if(!sel) return;
+    const now = getCRTime();
+    const todaysDraws = DRAWS.filter(d=>isDrawActiveToday(d));
+    sel.innerHTML = todaysDraws.map(d=>{
+      const open = isDrawOpen(d, now);
+      return `<option value="${d.name}" ${open?'':'disabled'}>${d.name} · ${d.country} · cierra ${fmtClose(d)}${open?'':' (cerrado)'}</option>`;
+    }).join('');
+    const firstOpen = todaysDraws.find(d=>isDrawOpen(d, now));
+    if(firstOpen) sel.value = firstOpen.name;
+    this.onDrawChange();
+  },
+
+  onDrawChange(){ 
+    this.refreshDrawStatus();
+    this.checkNicaDraw();
+  },
+
+  checkNicaDraw(){
+    const sel = document.getElementById('drawSelect');
+    const revField = document.getElementById('revFieldWrapper');
+    const revInput = document.getElementById('revInput');
+    const betRow = document.getElementById('betRowContainer');
+    if(!sel || !revField || !revInput || !betRow) return;
+
+    const selectedDrawName = sel.value || '';
+    const isNica = selectedDrawName.toLowerCase().includes('nica');
+
+    if(isNica){
+      revField.classList.add('hidden');
+      revInput.disabled = true;
+      revInput.value = ''; // Limpiar el valor si cambian a Nica
+      betRow.style.gridTemplateColumns = '1fr 1fr auto auto';
+    } else {
+      revField.classList.remove('hidden');
+      revInput.disabled = false;
+      betRow.style.gridTemplateColumns = '1fr 1fr 1.2fr auto auto';
+    }
+  },
+
+  refreshDrawStatus(){
+    const sel = document.getElementById('drawSelect');
+    const banner = document.getElementById('drawStatus');
+    if(!sel || !banner) return;
+    const draw = DRAWS.find(d=>d.name===sel.value);
+    const open = draw ? isDrawOpen(draw, getCRTime()) : false;
+    banner.classList.remove('hidden');
+    if(open){
+      banner.className = 'status-banner open';
+      banner.textContent = `Sorteo abierto · cierra a las ${fmtClose(draw)} hora Costa Rica.`;
+    }else{
+      banner.className = 'status-banner closed';
+      banner.textContent = draw ? `Este sorteo ya cerró a las ${fmtClose(draw)}. No se pueden agregar ni confirmar ventas.` : 'Seleccioná un sorteo.';
+    }
+    ['numInput','amtInput','revInput'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !open; });
+    const addBtn = document.querySelector('.add-btn');
+    if(addBtn) addBtn.disabled = !open;
+  },
+
+  tickClock(){
+    const now = getCRTime();
+    const clockEl = document.getElementById('crClock');
+    if(clockEl) clockEl.textContent = `${String(now.h).padStart(2,'0')}:${String(now.m).padStart(2,'0')}:${String(now.s).padStart(2,'0')}`;
+    this.populateDrawSelect();
+    this.refreshDrawStatus();
+    this.processClosedDraws(now);
+  },
+
+  async processClosedDraws(now){
+    const today = crDateStr();
+    for (const d of DRAWS) {
+      if(isDrawOpen(d, now)) continue;
+      if(this.processedDraws[d.key] === today) continue;
+
+      const pendientes = this.tickets.filter(t => t.draw === d.name && t.status === 'pendiente' && t.crDate === today);
+      for (const t of pendientes) {
+        try {
+          const movId = await this.getNextSeq('movimientos');
+          const movRef = window.fs.doc(window.fs.collection(window.fs.db, 'movimientos'));
+
+          await window.fs.runTransaction(window.fs.db, async (tx) => {
+            const tRef = window.fs.doc(window.fs.db, 'tiquetes', t._id);
+            const tSnap = await tx.get(tRef);
+            if(!tSnap.exists() || tSnap.data().status !== 'pendiente') return;
+
+            tx.update(tRef, { status: 'registrada' });
+            tx.set(movRef, {
+              id: 'M' + movId, date: todayStr(), crDate: today,
+              type: 'Ingreso', detail: `Venta ${t.id} · ${t.draw}`,
+              amount: t.total, owner: t.owner, ticketId: t.id, draw: t.draw, locked: false
+            });
+          });
+        } catch (e) { console.error('Error cerrando sorteo:', e); }
+      }
+      this.processedDraws[d.key] = today;
+    }
+  },
+
+  moveNext(e, nextId){
+    if(e.key !== 'Enter') return;
+    e.preventDefault();
+    if(nextId){ const el = document.getElementById(nextId); if(el){ el.focus(); el.select && el.select(); } }
+    else { this.addLine(); }
+  },
+
+  onlyDigits(el){
+    const clean = el.value.replace(/\D+/g, '').slice(0, 2);
+    if(el.value !== clean) el.value = clean;
+  },
+
+  randomNumber(){
+    const n = Math.floor(Math.random()*100);
+    document.getElementById('numInput').value = String(n).padStart(2,'0');
+    const sel = document.getElementById('drawSelect');
+    const isNica = sel && sel.value.toLowerCase().includes('nica');
+    if(!isNica) {
+      document.getElementById('revInput').focus();
+    } else {
+      this.addLine();
+    }
+  },
+
+  addLine(){
+    const sel = document.getElementById('drawSelect');
+    const draw = DRAWS.find(d=>d.name===sel.value);
+    if(!draw || !isDrawOpen(draw, getCRTime())){ alert('Este sorteo ya cerró.'); return; }
+    const numRaw = document.getElementById('numInput').value.trim();
+    const num = numRaw ? numRaw.padStart(2,'0') : '';
+    const amt = parseFloat(document.getElementById('amtInput').value);
+    
+    const isNica = draw.name.toLowerCase().includes('nica');
+    const revRaw = !isNica ? document.getElementById('revInput').value.trim() : '';
+    const rev = revRaw ? parseFloat(revRaw) : 0;
+
+    if(!num){ alert('Ingresá un número.'); return; }
+    if(!amt || amt < 50 || amt % 50 !== 0){ alert('Mínimo ₡50 y múltiplos de 50.'); return; }
+    if(!isNica && rev > 0 && (rev < 50 || rev % 50 !== 0)){ alert('Mínimo ₡50 y múltiplos de 50 para el reventado.'); return; }
+    if(!isNica && rev > amt){ alert('El reventado no puede ser mayor que la apuesta.'); return; }
+    
+    const yaJugado = this.currentLines.filter(l=>l.num===num).reduce((s,l)=>s+l.amt+l.rev, 0);
+    if(yaJugado + amt + rev > this.maxBet){
+      alert(`Límite superado. El máximo por número es ${money(this.maxBet)}.`);
+      return;
+    }
+    const existente = this.currentLines.find(l=>l.num===num);
+    if(existente){
+      existente.amt += amt;
+      existente.rev += rev;
+    } else {
+      this.currentLines.push({num, amt, rev});
+    }
+    document.getElementById('numInput').value='';
+    if(!isNica) document.getElementById('revInput').value='';
+    this.renderLines();
+    document.getElementById('numInput').focus();
+  },
+
+  removeLine(i){ this.currentLines.splice(i,1); this.renderLines(); },
+
+  renderLines(){
+    const body = document.getElementById('linesBody');
+    body.innerHTML = '';
+    let total = 0;
+    this.currentLines.forEach((l,i)=>{
+      total += l.amt + l.rev;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="mono">${l.num}</td><td class="mono">${money(l.amt)}</td><td class="mono">${l.rev? money(l.rev):'—'}</td>
+        <td><button class="del-x" onclick="App.removeLine(${i})">✕</button></td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('linesTable').classList.toggle('hidden', this.currentLines.length===0);
+    document.getElementById('linesEmpty').classList.toggle('hidden', this.currentLines.length>0);
+    document.getElementById('ticketTotal').textContent = money(total);
+  },
+
+  async confirmSale(){
+    const btn = document.getElementById('btnConfirmSale');
+    const drawObj = DRAWS.find(d=>d.name===document.getElementById('drawSelect').value);
+    if(!drawObj || !isDrawOpen(drawObj, getCRTime())){ alert('Este sorteo ya cerró.'); return; }
+    if(this.currentLines.length===0){ alert('Agregá líneas al tiquete.'); return; }
+
+    const porNumero = {};
+    this.currentLines.forEach(l=>{ porNumero[l.num] = (porNumero[l.num]||0) + l.amt + l.rev; });
+    const excedido = Object.keys(porNumero).find(n => porNumero[n] > this.maxBet);
+    if(excedido){ alert(`El número ${excedido} supera el límite de ${money(this.maxBet)}.`); return; }
+
+    btn.disabled = true;
+    try {
+      const seq = await this.getNextSeq('tiquetes');
+      const id = `TSM-AAA-${String(seq).padStart(5,'0')}`;
+      const total = this.currentLines.reduce((s,l)=>s+l.amt+l.rev, 0);
+      
+      const movId = await this.getNextSeq('movimientos');
+      const movData = {
+        id: 'M' + movId, 
+        ticketId: id,
+        date: todayStr(), 
+        crDate: crDateStr(),
+        type: 'Ingreso', 
+        category: 'Venta de Tiquetes',
+        detail: `Venta ${id} · ${drawObj.name}`,
+        amount: total, 
+        owner: this.currentRole, 
+        draw: drawObj.name, 
+        seller: this.currentProfile.name,
+        locked: false
+      };
+      
+      const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), movData);
+
+      const newTicket = {
+        id, 
+        draw: drawObj.name, 
+        date: todayStr(), 
+        crDate: crDateStr(),
+        lines: [...this.currentLines], 
+        total, 
+        vendor: this.currentProfile.name,
+        owner: this.currentRole, 
+        paid: false, 
+        status: 'registrada',
+        movDocId: movRef.id
+      };
+
+      await window.fs.addDoc(window.fs.collection(window.fs.db, 'tiquetes'), newTicket);
+      
+      this.currentLines = [];
+      this.renderLines();
+      this.showReceipt(newTicket);
+      
+      alert(`Tiquete ${id} registrado. El ingreso se sumó a la caja de inmediato.`);
+      this.switchTab('reportes');
+    } catch(e) {
+      console.error("Error al confirmar venta:", e);
+      alert("Error al confirmar venta.");
+    } finally {
+      btn.disabled = false;
+    }
+  },
+
+  showReceiptById(id){
+    const t = this.tickets.find(x=>x.id===id);
+    if(!t){ alert('No se encontró el tiquete.'); return; }
+    this.showReceipt(t);
+  },
+
+  showReceipt(t){
+    const directoGroups = {};
+    t.lines.forEach(l=>{ (directoGroups[l.amt] = directoGroups[l.amt] || []).push(escapeHtml(l.num)); });
+    const directoHtml = Object.keys(directoGroups).sort((a,b)=>a-b)
+      .map(amt=>`<div class="row"><span>${directoGroups[amt].join('-')}</span><span>${money(amt)}</span></div>`).join('');
+
+    const hasReventado = t.lines.some(l => l.rev > 0);
+    const reventGroups = {};
+    t.lines.forEach(l=>{ if(l.rev>0) (reventGroups[l.rev] = reventGroups[l.rev] || []).push(escapeHtml(l.num)); });
+    const reventHtml = hasReventado ? `
+      <div class="small" style="font-weight:600; margin-top:6px;">Reventado:</div>
+      ${Object.keys(reventGroups).sort((a,b)=>a-b).map(amt=>`<div class="row"><span>${reventGroups[amt].join('-')}</span><span>${money(amt)}</span></div>`).join('')}
+    ` : '';
+
+    const footerRules = t.draw.toLowerCase().includes('nica') 
+      ? `<div class="small">Sorteo Nica · Directo paga x80</div><hr>` 
+      : `<div class="small">Directo paga x85 · Reventado x100</div><hr>`;
+
+    document.getElementById('printArea').innerHTML = `
+      <div class="center big">TIEMPOS SAN MIGUEL</div>
+      <div class="center">Oficina · Tel 7250-2050</div><hr>
+      <div class="row"><span>Tiquete</span><span>${escapeHtml(t.id)}</span></div>
+      <div class="row"><span>Sorteo</span><span>${escapeHtml(t.draw)}</span></div>
+      <div class="row"><span>Fecha</span><span>${escapeHtml(t.date)}</span></div><hr>
+      <div class="small" style="font-weight:600;">Directo:</div>
+      ${directoHtml}${reventHtml}<hr>
+      <div class="row big"><span>TOTAL</span><span>${money(t.total)}</span></div><hr>
+      ${footerRules}
+      <div class="small" style="font-weight:600;">Vence: ${formatDMY(addDaysToDateStr(t.crDate, CLAIM_DAYS))}</div><hr>
+      <div class="center">Vendedor: ${escapeHtml(t.vendor)}</div>
+    `;
+  },
+
+  async deleteTicket(id){
+    const t = this.tickets.find(x => x.id === id);
+    if(!t) return;
+    
+    if(!confirm(`¿Eliminar el tiquete ${t.id}? Esto también borrará su ingreso asociado.`)) return;
+
+    try {
+      if(t._id) {
+        await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id));
+      }
+      if(t.movDocId) {
+        try { await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'movimientos', t.movDocId)); } catch(errMov){}
+      }
+      if(t.payMovDocId) {
+        try { await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'movimientos', t.payMovDocId)); } catch(errPay){}
+      }
+
+      this.tickets = this.tickets.filter(x => x.id !== id);
+      this.movs = this.movs.filter(m => m.ticketId !== id && (!m.detail || !m.detail.includes(id)));
+      alert("Tiquete eliminado con éxito.");
+    } catch(e) { 
+      console.error("Error al eliminar:", e); 
+      alert("Hubo un error al intentar eliminar el tiquete.");
+    }
+  },
+
+  async saveMaxBet(){
+    if(this.currentRole !== 'admin') return;
+    const val = parseFloat(document.getElementById('maxBetInput').value);
+    if(isNaN(val) || val < 50){ alert('Monto inválido.'); return; }
+    try {
+      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', 'limites'), { limiteGeneral: val }, { merge: true });
+      alert(`Límite actualizado en la Nube.`);
+    } catch(e){ alert('Error al actualizar límite.'); }
+  },
+
+  async registerExpense(){
+    const owner = this.currentRole === 'admin' ? document.getElementById('gastoOwner').value : this.currentRole;
+    if(!owner){ alert('Elegí el negocio.'); return; }
+    const categoria = document.getElementById('gastoCategoria').value;
+    const detalleRaw = document.getElementById('gastoDetalle').value.trim();
+    const monto = parseFloat(document.getElementById('gastoMonto').value);
+    if(isNaN(monto) || monto<=0){ alert('Ingresá un monto.'); return; }
+    
+    try {
+      const movId = await this.getNextSeq('movimientos');
+      await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
+        id: 'M'+movId, date: todayStr(), crDate: crDateStr(), type: 'Gasto', 
+        detail: detalleRaw ? `${categoria} · ${detalleRaw}` : categoria, 
+        amount: -monto, owner, category: categoria, locked: false
+      });
+      document.getElementById('gastoDetalle').value = '';
+      document.getElementById('gastoMonto').value = '';
+      alert(`Gasto registrado.`);
+    } catch(e){ console.error(e); }
+  },
+
+  async saveCierre(){
+    const owner = this.currentRole === 'admin' ? document.getElementById('cierreOwner').value : this.currentRole;
+    const efectivo = parseFloat(document.getElementById('cierreEfectivo').value);
+    if(isNaN(efectivo) || efectivo<0){ alert('Ingresá el efectivo.'); return; }
+    
+    const balance = this.movs.filter(m=>m.owner===owner).reduce((s,m)=>s+m.amount, 0);
+    const diferencia = efectivo - balance;
+    
+    try {
+      const seq = await this.getNextSeq('cierres');
+      const idStr = 'C' + seq;
+      
+      await window.fs.addDoc(window.fs.collection(window.fs.db, 'cierres'), {
+        id: idStr, owner, crDate: crDateStr(), ts: new Date().toISOString(), 
+        balance, efectivo, diferencia, registradoPor: this.currentProfile.name
+      });
+
+      const toLock = this.movs.filter(m=>m.owner===owner && !m.locked);
+      for(let m of toLock) {
+        await window.fs.updateDoc(window.fs.doc(window.fs.db, 'movimientos', m._id), { locked: true, cierreId: idStr });
+      }
+
+      document.getElementById('cierreEfectivo').value = '';
+      alert('Corte de caja guardado en Firestore.');
+    } catch(e){ console.error(e); }
+  },
+
+  renderCierres(){
+    const body = document.getElementById('cierreBody');
+    if(!body) return;
+    const list = this.cierres.slice().reverse();
+    body.innerHTML = '';
+    list.forEach(c=>{
+      const tr = document.createElement('tr');
+      const diffColor = Math.round(c.diferencia)===0 ? 'var(--text-muted)' : (c.diferencia<0 ? 'var(--red)' : 'var(--green)');
+      tr.innerHTML = `<td class="mono">${escapeHtml(c.crDate)}</td><td>${escapeHtml(ownerLabel(c.owner))}</td><td class="mono">${money(c.balance)}</td><td class="mono">${money(c.efectivo)}</td><td class="mono" style="color:${diffColor}">${money(c.diferencia)}</td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('cierreTable').classList.toggle('hidden', list.length===0);
+    document.getElementById('cierreEmpty').classList.toggle('hidden', list.length>0);
+  },
+
+  findTicketForPay(){
+    const id = normalizeCode(document.getElementById('payTicketId').value);
+    const t = this.tickets.find(x=>normalizeCode(x.id)===id);
+    const box = document.getElementById('payResult');
+    if(!t){ box.className='empty-note'; box.textContent='No encontrado.'; return; }
+    box.className = 'panel'; box.style.padding='14px';
+
+    const result = this.results.find(r=>r.draw===t.draw && r.crDate===t.crDate);
+    const premio = t.premio || 0;
+    const expiry = addDaysToDateStr(t.crDate, CLAIM_DAYS);
+    const expired = crDateStr() > expiry;
+    let estado;
+    if(t.paid) estado = `Ya pagado · premio ${money(premio)}`;
+    else if(!result) estado = `Sin resultado. Vence ${formatDMY(expiry)}.`;
+    else if(!t.premiado) estado = 'No salió premiado.';
+    else if(expired) estado = `⚠ Venció el ${formatDMY(expiry)}.`;
+    else if(t.status!=='registrada') estado = `Esperando cierre para finanzas.`;
+    else estado = `Premiado · le corresponden ${money(premio)}`;
+    const puedePagar = !t.paid && t.status==='registrada' && !!result && t.premiado && !expired;
+
+    box.innerHTML = `
+      <div style="margin-bottom:10px;"><b>${escapeHtml(t.id)}</b> · ${escapeHtml(t.draw)} · Jugado: ${money(t.total)}</div>
+      <div style="font-size:12.5px; color:${expired?'var(--red)':'var(--text-muted)'}; margin-bottom:12px;">${escapeHtml(estado)}</div>
+      ${puedePagar ? `<button class="btn-small gold" onclick="App.payTicket('${escapeHtml(t.id).replace(/'/g,"&#39;")}')">Registrar pago</button>` : ''}
+    `;
+  },
+
+  async payTicket(id){
+    const t = this.tickets.find(x=>x.id===id);
+    if(!t || t.paid || !t.premiado) return;
+    try {
+      const movId = await this.getNextSeq('movimientos');
+      const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
+        id: 'M'+movId, date: todayStr(), crDate: crDateStr(), type: 'Pago',
+        detail: `Pago a ganador ${t.id}`, amount: -(t.premio||0),
+        owner: t.owner, ticketId: t.id, draw: t.draw, locked: false
+      });
+      await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { paid: true, payMovDocId: movRef.id });
+      this.findTicketForPay();
+    } catch(e){ console.error(e); }
+  },
+
+  populateResultDrawSelect(){
+    const sel = document.getElementById('resDraw');
+    if(sel) sel.innerHTML = DRAWS.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+    const dateEl = document.getElementById('resDate');
+    if(dateEl && !dateEl.value) dateEl.value = crDateStr();
+  },
+
+  calcPremio(t, res){
+    let total = 0;
+    const isNica = t.draw.toLowerCase().includes('nica');
+    const multiplier = isNica ? 80 : 85;
+    const esReventadoGanador = res.numeroReventadoType === 'br';
+
+    t.lines.forEach(l=>{
+      if(l.num === res.numero) total += l.amt * multiplier;
+      if(!isNica && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 100;
+    });
+    return total;
+  },
+
+  async saveResult(){
+    if(this.currentRole !== 'admin') return;
+    const draw = document.getElementById('resDraw').value;
+    const crDate = document.getElementById('resDate').value;
+    const numeroRaw = document.getElementById('resNumero').value.trim();
+    const numeroReventadoType = document.getElementById('resReventadoType').value;
+    
+    if(!draw || !crDate || !numeroRaw){ alert('Completá sorteo, fecha y número ganador.'); return; }
+    
+    const isNica = draw.toLowerCase().includes('nica');
+    if(!isNica && !numeroReventadoType){ alert('Debes seleccionar obligatoriamente si cayó Bola Reventada (br) o Bola Blanca (bb).'); return; }
+
+    const numero = numeroRaw.padStart(2,'0');
+    const resId = `${crDate}_${draw.replace(/\s+/g,'')}`;
+
+    try {
+      await window.fs.setDoc(window.fs.doc(window.fs.db, 'resultados', resId), { 
+        draw, 
+        crDate, 
+        numero, 
+        numeroReventadoType: isNica ? 'N/A' : numeroReventadoType 
+      });
+
+      const configId = `sorteo_estado_${crDate}_${draw.replace(/\s+/g,'')}`;
+      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', configId), {
+        draw,
+        crDate,
+        estado: 'cerrado',
+        cerradoAutomaticamente: true,
+        actualizadoEn: new Date().toISOString()
+      }, { merge: true });
+
+      const ticketsToUpdate = this.tickets.filter(t => t.draw === draw && t.crDate === crDate);
+      for (let t of ticketsToUpdate) {
+        const premio = this.calcPremio(t, { numero, numeroReventadoType });
+        const premiado = premio > 0;
+        await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { premio, premiado });
+      }
+
+      alert('¡Resultado guardado y premios recalculados correctamente!');
+      
+      document.getElementById('resNumero').value = '';
+      document.getElementById('resReventadoType').value = '';
+    } catch(e) { 
+      console.error(e); 
+      alert('Error al guardar resultado.'); 
+    }
+  },
+
+  async deleteResult(id){
+    if(this.currentRole !== 'admin') return;
+    if(!confirm('¿Eliminar resultado?')) return;
+    try {
+      const r = this.results.find(x => x._id === id);
+      await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'resultados', id));
+      
+      if(r) {
+        const ticketsToReset = this.tickets.filter(t => t.draw === r.draw && t.crDate === r.crDate);
+        for(let t of ticketsToReset){
+          await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { premio: 0, premiado: false });
+        }
+      }
+    } catch(e) { console.error(e); }
+  },
+
+  renderResults(){
+    const body = document.getElementById('resBody');
+    if(!body) return;
+    const arr = this.results.slice().sort((a,b)=>(b.crDate+b.draw).localeCompare(a.crDate+a.draw));
+    body.innerHTML = '';
+    arr.forEach(r=>{
+      const tr = document.createElement('tr');
+      const revText = r.numeroReventadoType === 'br' ? 'Bola Reventada (br)' : r.numeroReventadoType === 'bb' ? 'Bola Blanca (bb)' : (r.numeroReventadoType || '—');
+      tr.innerHTML = `
+        <td>${escapeHtml(r.draw)}</td>
+        <td class="mono">${escapeHtml(r.crDate)}</td>
+        <td class="mono" style="font-weight:bold; color:var(--gold);">${escapeHtml(r.numero)}</td>
+        <td>${escapeHtml(revText)}</td>
+        <td><button class="del-x" onclick="App.deleteResult('${escapeHtml(r._id)}')">✕</button></td>
+      `;
+      body.appendChild(tr);
+    });
+    document.getElementById('resTable').classList.toggle('hidden', arr.length===0);
+    document.getElementById('resEmpty').classList.toggle('hidden', arr.length>0);
+  },
+
+  populateReportDrawSelect(){
+    const sel = document.getElementById('repDraw');
+    if(sel) sel.innerHTML = '<option value="">Todos</option>' + DRAWS.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+  },
+
+  clearMovFilters(){
+    document.getElementById('movDateFrom').value = '';
+    document.getElementById('movDateTo').value = '';
+    document.getElementById('movType').value = '';
+    const own = document.getElementById('movOwner');
+    if(own) own.value = '';
+    this.renderAll();
+  },
+
+  clearReportFilters(){
+    document.getElementById('repSearch').value = '';
+    document.getElementById('repDateFrom').value = '';
+    document.getElementById('repDateTo').value = '';
+    document.getElementById('repDraw').value = '';
+    document.getElementById('repPremio').value = '';
+    this.renderAll();
+  },
+
+  async createUserAccount(){
+    if(this.currentRole !== 'admin') return;
+    const email = document.getElementById('newUsrEmail').value.trim();
+    const pass = document.getElementById('newUsrPass').value;
+    const name = document.getElementById('newUsrName').value.trim();
+    const role = document.getElementById('newUsrRole').value;
+    
+    if(!email || !pass || !name){ alert('Completá todos los campos.'); return; }
+    if(pass.length < 6){ alert('La contraseña debe tener al menos 6 caracteres.'); return; }
+
+    try {
+      await window.createNewUserAccount(email, pass, name, role);
+      alert(`Usuario ${name} creado con éxito.`);
+      document.getElementById('newUsrEmail').value = '';
+      document.getElementById('newUsrPass').value = '';
+      document.getElementById('newUsrName').value = '';
+    } catch(e){
+      console.error(e);
+      alert('Error al crear usuario: ' + e.message);
+    }
+  },
+
+  renderAll(){
+    this.renderFinances();
+    this.renderReports();
+    this.renderDashboardSummary();
+  },
+
+  renderDashboardSummary(){
+    const today = crDateStr();
+    const todayMovs = this.movs.filter(m => (m.crDate === today || m.date === todayStr()) && m.type === 'Ingreso');
+    const sold = todayMovs.reduce((s,m)=>s+m.amount, 0);
+    const soldEl = document.getElementById('soldToday');
+    if(soldEl) soldEl.textContent = money(sold);
+
+    const todayTiq = this.tickets.filter(t => t.crDate === today || t.date === todayStr());
+    const tiqEl = document.getElementById('ticketsToday');
+    if(tiqEl) tiqEl.textContent = todayTiq.length;
+  },
+
+  renderFinances(){
+    const dateFrom = document.getElementById('movDateFrom').value;
+    const dateTo = document.getElementById('movDateTo').value;
+    const type = document.getElementById('movType').value;
+    const owner = document.getElementById('movOwner') ? document.getElementById('movOwner').value : '';
+
+    let list = this.movs.filter(m=>{
+      const mDate = movDateKey(m);
+      if(dateFrom && mDate && mDate < dateFrom) return false;
+      if(dateTo && mDate && mDate > dateTo) return false;
+      if(type && m.type !== type) return false;
+      if(owner && m.owner !== owner) return false;
+      return true;
+    }).sort((a,b)=>(b.crDate||b.date||'').localeCompare(a.crDate||a.date||''));
+
+    const body = document.getElementById('movBody');
+    if(body){
+      body.innerHTML = '';
+      list.forEach(m=>{
+        const tr = document.createElement('tr');
+        const color = m.amount > 0 ? 'var(--green)' : 'var(--red)';
+        const canDelete = this.currentRole === 'admin' && !m.locked;
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(m.crDate || m.date)}</td>
+          <td>${escapeHtml(m.type)}</td>
+          <td>${escapeHtml(m.seller || ownerLabel(m.owner))}</td>
+          <td>${escapeHtml(m.detail)}</td>
+          <td class="mono" style="color:${color}">${money(m.amount)}</td>
+          <td>${canDelete ? `<button class="del-x" onclick="App.deleteMov('${escapeHtml(m._id)}')">✕</button>` : '—'}</td>
+        `;
+        body.appendChild(tr);
+      });
+      document.getElementById('movTable').classList.toggle('hidden', list.length===0);
+      document.getElementById('movEmpty').classList.toggle('hidden', list.length>0);
+    }
+
+    const filteredMovs = (owner) ? this.movs.filter(m=>m.owner===owner) : this.movs;
+    const totalIn = filteredMovs.filter(m=>m.amount>0).reduce((s,m)=>s+m.amount, 0);
+    const totalOut = filteredMovs.filter(m=>m.amount<0).reduce((s,m)=>s+Math.abs(m.amount), 0);
+    const balance = totalIn - totalOut;
+
+    const bFull = document.getElementById('balanceFull');
+    if(bFull) bFull.textContent = money(balance);
+    const tIn = document.getElementById('totalIn');
+    if(tIn) tIn.textContent = money(totalIn);
+    const tOut = document.getElementById('totalOut');
+    if(tOut) tOut.textContent = money(totalOut);
+
+    const bTop = document.getElementById('balanceTop');
+    if(bTop) bTop.textContent = money(balance);
+
+    if(this.currentRole === 'admin'){
+      const libBal = this.movs.filter(m=>m.owner==='libreria').reduce((s,m)=>s+m.amount, 0);
+      const supBal = this.movs.filter(m=>m.owner==='supermercado').reduce((s,m)=>s+m.amount, 0);
+      const bLib = document.getElementById('balLibreria');
+      if(bLib) bLib.textContent = money(libBal);
+      const bSup = document.getElementById('balSuper');
+      if(bSup) bSup.textContent = money(supBal);
+    }
+
+    this.renderDrawSummary(filteredMovs);
+    this.renderDaySummary(filteredMovs);
+  },
+
+  async deleteMov(id){
+    if(this.currentRole !== 'admin') return;
+    const m = this.movs.find(x => x._id === id);
+    if(!m || m.locked){ alert('Este movimiento está bloqueado por un cierre de caja.'); return; }
+    if(!confirm('¿Eliminar este movimiento?')) return;
+    try {
+      await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'movimientos', id));
+    } catch(e){ console.error(e); }
+  },
+
+  renderDrawSummary(movs){
+    const body = document.getElementById('drawSummaryBody');
+    if(!body) return;
+    const summary = {};
+    movs.forEach(m=>{
+      if(!m.draw) return;
+      if(!summary[m.draw]) summary[m.draw] = { sold:0, paid:0 };
+      if(m.type === 'Ingreso') summary[m.draw].sold += m.amount;
+      if(m.type === 'Pago') summary[m.draw].paid += Math.abs(m.amount);
+    });
+    const keys = Object.keys(summary);
+    body.innerHTML = '';
+    keys.forEach(draw=>{
+      const item = summary[draw];
+      const margin = item.sold - item.paid;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${escapeHtml(draw)}</td><td class="mono">${money(item.sold)}</td><td class="mono">${money(item.paid)}</td><td class="mono" style="color:${margin>=0?'var(--green)':'var(--red)'}">${money(margin)}</td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('drawSummaryTable').classList.toggle('hidden', keys.length===0);
+    document.getElementById('drawSummaryEmpty').classList.toggle('hidden', keys.length>0);
+  },
+
+  renderDaySummary(movs){
+    const body = document.getElementById('daySummaryBody');
+    if(!body) return;
+    const summary = {};
+    movs.forEach(m=>{
+      const d = m.crDate || m.date || 'Sin fecha';
+      if(!summary[d]) summary[d] = { sold:0, prizes:0, expenses:0 };
+      if(m.type === 'Ingreso') summary[d].sold += m.amount;
+      if(m.type === 'Pago') summary[d].prizes += Math.abs(m.amount);
+      if(m.type === 'Gasto') summary[d].expenses += Math.abs(m.amount);
+    });
+    const days = Object.keys(summary).sort().reverse();
+    body.innerHTML = '';
+    days.forEach(d=>{
+      const item = summary[d];
+      const net = item.sold - item.prizes - item.expenses;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="mono">${escapeHtml(d)}</td><td class="mono">${money(item.sold)}</td><td class="mono">${money(item.prizes)}</td><td class="mono">${money(item.expenses)}</td><td class="mono" style="color:${net>=0?'var(--green)':'var(--red)'}">${money(net)}</td>`;
+      body.appendChild(tr);
+    });
+    document.getElementById('daySummaryTable').classList.toggle('hidden', days.length===0);
+    document.getElementById('daySummaryEmpty').classList.toggle('hidden', days.length>0);
+  },
+
+  renderReports(){
+    const search = normalizeCode(document.getElementById('repSearch').value);
+    const dateFrom = document.getElementById('repDateFrom').value;
+    const dateTo = document.getElementById('repDateTo').value;
+    const draw = document.getElementById('repDraw').value;
+    const premioFilter = document.getElementById('repPremio').value;
+
+    let list = this.tickets.filter(t=>{
+      if(search && !normalizeCode(t.id).includes(search)) return false;
+      if(dateFrom && t.crDate && t.crDate < dateFrom) return false;
+      if(dateTo && t.crDate && t.crDate > dateTo) return false;
+      if(draw && t.draw !== draw) return false;
+
+      const hasRes = !!this.results.find(r=>r.draw===t.draw && r.crDate===t.crDate);
+      if(premioFilter === 'premiado' && (!hasRes || !t.premiado)) return false;
+      if(premioFilter === 'no_premiado' && (!hasRes || t.premiado)) return false;
+      if(premioFilter === 'sin_resultado' && hasRes) return false;
+      return true;
+    }).sort((a,b)=>b.id.localeCompare(a.id));
+
+    const body = document.getElementById('repBody');
+    if(!body) return;
+    body.innerHTML = '';
+    list.forEach(t=>{
+      const hasRes = !!this.results.find(r=>r.draw===t.draw && r.crDate===t.crDate);
+      let estadoTxt = 'Pendiente resultado';
+      if(hasRes){
+        if(t.paid) estadoTxt = 'Pagado';
+        else if(t.premiado) estadoTxt = `Premiado (${money(t.premio)})`;
+        else estadoTxt = 'No premiado';
+      }
+
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.onclick = ()=>App.showReceiptById(t.id);
+      tr.innerHTML = `
+        <td class="mono" style="font-weight:600; color:var(--gold);">${escapeHtml(t.id)}</td>
+        <td>${escapeHtml(t.draw)}</td>
+        <td>${escapeHtml(t.vendor || ownerLabel(t.owner))}</td>
+        <td class="mono">${money(t.total)}</td>
+        <td class="mono">${t.premiado ? money(t.premio) : '—'}</td>
+        <td>${escapeHtml(estadoTxt)}</td>
+        <td>${this.currentRole === 'admin' ? `<button class="del-x" onclick="event.stopPropagation(); App.deleteTicket('${escapeHtml(t.id)}')">✕</button>` : '—'}</td>
+      `;
+      body.appendChild(tr);
+    });
+    document.getElementById('repTable').classList.toggle('hidden', list.length===0);
+    document.getElementById('repEmpty').classList.toggle('hidden', list.length>0);
+  }
+};
+
+window.addEventListener('DOMContentLoaded', ()=>App.init());
+</script>
+</body>
+</html>
