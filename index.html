@@ -236,6 +236,7 @@
         <h3>Nueva venta</h3>
         <select id="drawSelect" class="draw-select" onchange="App.onDrawChange()"></select>
         <div id="drawStatus" class="status-banner hidden"></div>
+        <div class="field"><label>Nombre del comprador (opcional)</label><input id="buyerInput" placeholder="Anónimo" maxlength="30" autocomplete="off"></div>
 
         <div class="bet-row" id="betRowContainer" style="grid-template-columns:1fr 1fr 1.2fr auto auto;">
           <div class="field"><label>Monto</label><input id="amtInput" type="number" min="50" step="50" placeholder="mín. 50, de 50 en 50" inputmode="numeric" onkeydown="App.moveNext(event,'numInput')"></div>
@@ -459,7 +460,7 @@
         </div>
         <div id="repEmpty" class="empty-note">No hay tiquetes emitidos todavía</div>
         <table id="repTable" class="hidden">
-          <thead><tr><th>Tiquete</th><th>Sorteo</th><th>Vendedor</th><th>Total</th><th>Premio</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Tiquete</th><th>Sorteo</th><th>Vendedor</th><th>Comprador</th><th>Total</th><th>Premio</th><th>Estado</th><th></th></tr></thead>
           <tbody id="repBody"></tbody>
         </table>
       </div>
@@ -1139,6 +1140,7 @@ const App = {
     this.currentLines.forEach(l=>{ porNumero[l.num] = (porNumero[l.num]||0) + l.amt + l.rev; });
     const excedido = Object.keys(porNumero).find(n => porNumero[n] > this.maxBet);
     if(excedido){ alert(`El número ${excedido} supera el límite de ${money(this.maxBet)}.`); return; }
+    const buyer = document.getElementById('buyerInput').value.trim() || 'Anónimo';
 
     btn.disabled = true;
     try {
@@ -1171,6 +1173,7 @@ const App = {
         crDate: crDateStr(),
         lines: [...this.currentLines], 
         total, 
+        buyer,
         vendor: this.currentProfile.name,
         owner: this.currentRole, 
         paid: false, 
@@ -1181,6 +1184,7 @@ const App = {
       await window.fs.addDoc(window.fs.collection(window.fs.db, 'tiquetes'), newTicket);
       
       this.currentLines = [];
+      document.getElementById('buyerInput').value = '';
       this.renderLines();
       this.showReceipt(newTicket);
       
@@ -1226,7 +1230,8 @@ const App = {
       <div class="center">Oficina · Tel 7250-2050</div><hr>
       <div class="row"><span>Tiquete</span><span>${escapeHtml(t.id)}</span></div>
       <div class="row"><span>Sorteo</span><span>${escapeHtml(t.draw)}</span></div>
-      <div class="row"><span>Fecha</span><span>${escapeHtml(t.date)}</span></div><hr>
+      <div class="row"><span>Fecha</span><span>${escapeHtml(t.date)}</span></div>
+      <div class="row"><span>Cliente</span><span>${escapeHtml(t.buyer || 'Anónimo')}</span></div><hr>
       <div class="small" style="font-weight:600;">Directo:</div>
       ${directoHtml}${reventHtml}<hr>
       <div class="row big"><span>TOTAL</span><span>${money(t.total)}</span></div><hr>
@@ -1381,7 +1386,7 @@ const App = {
     const puedePagar = !t.paid && t.status==='registrada' && !!result && t.premiado && !expired;
 
     box.innerHTML = `
-      <div style="margin-bottom:10px;"><b>${escapeHtml(t.id)}</b> · ${escapeHtml(t.draw)} · Jugado: ${money(t.total)}</div>
+            <div style="margin-bottom:10px;"><b>${escapeHtml(t.id)}</b> · ${escapeHtml(t.draw)} · Jugado: ${money(t.total)}<br><span style="color:var(--text-muted); font-size:12.5px;">Comprador: ${escapeHtml(t.buyer || 'Anónimo')}</span></div>
       <div style="font-size:12.5px; color:${expired?'var(--red)':'var(--text-muted)'}; margin-bottom:12px;">${escapeHtml(estado)}</div>
       ${puedePagar ? `<button class="btn-small gold" onclick="App.payTicket('${escapeHtml(t.id).replace(/'/g,"&#39;")}')">Registrar pago</button>` : ''}
     `;
@@ -1865,6 +1870,7 @@ const App = {
         <td class="mono" style="font-weight:600; color:var(--gold);">${escapeHtml(t.id)}</td>
         <td>${escapeHtml(t.draw)}</td>
         <td>${escapeHtml(t.vendor || ownerLabel(t.owner))}</td>
+        <td>${escapeHtml(t.buyer || 'Anónimo')}</td>
         <td class="mono">${money(t.total)}</td>
         <td class="mono">${t.premiado ? money(t.premio) : '—'}</td>
         <td>${escapeHtml(estadoTxt)}</td>
