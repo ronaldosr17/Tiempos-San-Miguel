@@ -857,12 +857,30 @@ const App = {
     if(!sel) return;
     const now = getCRTime();
     const todaysDraws = DRAWS.filter(d=>isDrawActiveToday(d));
+
+    // Firma del estado actual: qué sorteos hay y cuáles están abiertos.
+    // Si no cambió nada, no se toca el select (así no se pierde la selección).
+    const signature = todaysDraws.map(d => d.key + ':' + (isDrawOpen(d, now) ? 1 : 0)).join('|');
+    if(sel.dataset.sig === signature) return;
+    sel.dataset.sig = signature;
+    this.renderReports();   // <-- nueva: refresca el botón ✕ cuando cambia el estado de los sorteos
+
+    const previous = sel.value; // lo que el vendedor había elegido
+
     sel.innerHTML = todaysDraws.map(d=>{
       const open = isDrawOpen(d, now);
       return `<option value="${d.name}" ${open?'':'disabled'}>${d.name} · ${d.country} · cierra ${fmtClose(d)}${open?'':' (cerrado)'}</option>`;
     }).join('');
-    const firstOpen = todaysDraws.find(d=>isDrawOpen(d, now));
-    if(firstOpen) sel.value = firstOpen.name;
+
+    // Conservar la selección previa si ese sorteo sigue abierto;
+    // si no, ir al primer sorteo abierto.
+    const prevDraw = todaysDraws.find(d => d.name === previous);
+    if(prevDraw && isDrawOpen(prevDraw, now)){
+      sel.value = previous;
+    } else {
+      const firstOpen = todaysDraws.find(d => isDrawOpen(d, now));
+      if(firstOpen) sel.value = firstOpen.name;
+    }
     this.onDrawChange();
   },
 
@@ -1115,7 +1133,7 @@ const App = {
 
     const footerRules = t.draw.toLowerCase().includes('nica') 
       ? `<div class="small">Sorteo Nica · Directo paga x80</div><hr>` 
-      : `<div class="small">Directo paga x85 · Reventado x100</div><hr>`;
+      : `<div class="small">Directo paga x85 · Reventado x200</div><hr>`;
 
     document.getElementById('printArea').innerHTML = `
       <div class="center big">TIEMPOS SAN MIGUEL</div>
@@ -1132,10 +1150,34 @@ const App = {
     `;
   },
 
+  canDeleteTicket(t){
+    if(this.currentRole === 'admin') return true;      // el admin siempre puede
+    if(t.owner !== this.currentRole) return false;     // solo tiquetes de su negocio
+    if(t.paid) return false;                           // nunca uno ya pagado
+    if(t.crDate !== crDateStr()) return false;         // solo tiquetes de hoy
+    const draw = DRAWS.find(d => d.name === t.draw);
+    return !!draw && isDrawOpen(draw, getCRTime());    // solo si el sorteo sigue abierto
+  },
+
   async deleteTicket(id){
     const t = this.tickets.find(x => x.id === id);
     if(!t) return;
-    
+
+    if(!this.canDeleteTicket(t)){
+      alert('Este tiquete ya no se puede eliminar porque el sorteo cerró.');
+      this.renderReports();
+      return;
+    }
+
+    // Un vendedor tampoco puede borrar si el ingreso ya entró en un cierre de caja
+    if(this.currentRole !== 'admin'){
+      const mov = this.movs.find(m => m._id === t.movDocId);
+      if(mov && mov.locked){
+        alert('Este tiquete ya está incluido en un cierre de caja y no se puede eliminar.');
+        return;
+      }
+    }
+
     if(!confirm(`¿Eliminar el tiquete ${t.id}? Esto también borrará su ingreso asociado.`)) return;
 
     try {
@@ -1151,9 +1193,10 @@ const App = {
 
       this.tickets = this.tickets.filter(x => x.id !== id);
       this.movs = this.movs.filter(m => m.ticketId !== id && (!m.detail || !m.detail.includes(id)));
+      this.renderAll();
       alert("Tiquete eliminado con éxito.");
-    } catch(e) { 
-      console.error("Error al eliminar:", e); 
+    } catch(e) {
+      console.error("Error al eliminar:", e);
       alert("Hubo un error al intentar eliminar el tiquete.");
     }
   },
@@ -1288,7 +1331,7 @@ const App = {
 
     t.lines.forEach(l=>{
       if(l.num === res.numero) total += l.amt * multiplier;
-      if(!isNica && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 100;
+      if(!isNica && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 200;
     });
     return total;
   },
@@ -1605,7 +1648,7 @@ const App = {
         <td class="mono">${money(t.total)}</td>
         <td class="mono">${t.premiado ? money(t.premio) : '—'}</td>
         <td>${escapeHtml(estadoTxt)}</td>
-        <td>${this.currentRole === 'admin' ? `<button class="del-x" onclick="event.stopPropagation(); App.deleteTicket('${escapeHtml(t.id)}')">✕</button>` : '—'}</td>
+        <td>${this.canDeleteTicket(t) ? `<button class="del-x" onclick="event.stopPropagation(); App.deleteTicket('${escapeHtml(t.id)}')">✕</button>` : '—'}</td>
       `;
       body.appendChild(tr);
     });
