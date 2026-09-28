@@ -397,6 +397,25 @@
         </div>
         <div id="payResult" class="empty-note">Ingresá un número de tiquete para buscarlo</div>
       </div>
+      <!-- ▼▼▼ PEGAR AQUÍ ▼▼▼ -->
+      <div class="panel">
+        <h3>Números que han salido</h3>
+        <div class="bet-row" style="grid-template-columns:1fr 1fr 1.3fr auto; margin-bottom:14px;">
+          <div class="field"><label>Desde</label><input id="numDateFrom" type="date" onchange="App.renderNumeros()"></div>
+          <div class="field"><label>Hasta</label><input id="numDateTo" type="date" onchange="App.renderNumeros()"></div>
+          <div class="field">
+            <label>Sorteo</label>
+            <select id="numDraw" onchange="App.renderNumeros()"><option value="">Todos</option></select>
+          </div>
+          <button class="btn-small" style="height:38px;" onclick="App.clearNumerosFilters()">Quitar filtros</button>
+        </div>
+        <div id="numEmpty" class="empty-note">Todavía no hay resultados registrados</div>
+        <table id="numTable" class="hidden">
+          <thead><tr><th>Fecha</th><th>Sorteo</th><th>Número</th><th>Reventado</th></tr></thead>
+          <tbody id="numBody"></tbody>
+        </table>
+      </div>
+      <!-- ▲▲▲ HASTA AQUÍ ▲▲▲ -->
     </div>
     <div>
       <div class="panel">
@@ -474,7 +493,7 @@
     <div>
       <div class="panel">
         <h3>Registrar resultado del sorteo</h3>
-        <div class="field"><label>Sorteo</label><select id="resDraw" class="draw-select"></select></div>
+        <div class="field"><label>Sorteo</label><select id="resDraw" class="draw-select" onchange="App.onResDrawChange()"></select></div>
         <div class="field"><label>Fecha (Costa Rica)</label><input id="resDate" type="date"></div>
         <div class="bet-row" style="grid-template-columns:1fr 1fr;">
           <div class="field"><label>Número ganador</label><input id="resNumero" placeholder="05" maxlength="2" inputmode="numeric" oninput="App.onlyDigits(this)"></div>
@@ -653,7 +672,15 @@ const DRAWS = [
   {key:'nica_tarde',  name:'Nica Tarde (3:00 PM)',     country:'NI', closeH:15, closeM:0},
   {key:'nica_vesper', name:'Nica Vespertina (6:00 PM)',country:'NI', closeH:18, closeM:0, weekendOnly:true},
   {key:'nica_noche',  name:'Nica Noche (9:00 PM)',     country:'NI', closeH:21, closeM:0},
+  {key:'primera_am',  name:'La Primera (10:00 AM)', country:'DO', closeH:10, closeM:0},
+  {key:'primera_pm',  name:'La Primera (6:00 PM)',  country:'DO', closeH:18, closeM:0},
 ];
+
+function sinReventado(name){
+  const n = (name || '').toLowerCase();
+  return n.includes('nica') || n.includes('primera');
+}
+
 function getCRWeekday(){
   const wd = new Intl.DateTimeFormat('en-US', {timeZone:'America/Costa_Rica', weekday:'short'}).format(new Date());
   return {Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6}[wd];
@@ -697,6 +724,7 @@ const App = {
     this.populateDrawSelect();
     this.populateResultDrawSelect();
     this.populateReportDrawSelect();
+    this.populateNumerosDrawSelect();
     this.tickClock();
     setInterval(()=>this.tickClock(), 1000);
 
@@ -919,7 +947,13 @@ const App = {
     this.onDrawChange();
   },
 
-  onDrawChange(){ 
+  onDrawChange(){
+    const sel = document.getElementById('drawSelect');
+    if(sel && sinReventado(sel.value) && this.currentLines.some(l => l.rev > 0)){
+      this.currentLines.forEach(l => { l.rev = 0; });
+      this.renderLines();
+      alert('Este sorteo no juega reventado. Se quitó el reventado de las líneas del tiquete.');
+    }
     this.refreshDrawStatus();
     this.checkNicaDraw();
   },
@@ -964,7 +998,13 @@ const App = {
       banner.className = 'status-banner closed';
       banner.textContent = draw ? `Este sorteo ya cerró a las ${fmtClose(draw)}. No se pueden agregar ni confirmar ventas.` : 'Seleccioná un sorteo.';
     }
-    ['numInput','amtInput','revInput'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !open; });
+
+    const sinRev = draw ? sinReventado(draw.name) : false;
+    ['numInput','amtInput'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !open; });
+
+    const revEl = document.getElementById('revInput');
+    if(revEl) revEl.disabled = !open || sinRev;
+
     const addBtn = document.querySelector('.add-btn');
     if(addBtn) addBtn.disabled = !open;
   },
@@ -1011,8 +1051,12 @@ const App = {
   moveNext(e, nextId){
     if(e.key !== 'Enter') return;
     e.preventDefault();
-    if(nextId){ const el = document.getElementById(nextId); if(el){ el.focus(); el.select && el.select(); } }
-    else { this.addLine(); }
+    const el = nextId ? document.getElementById(nextId) : null;
+    if(el && el.offsetParent !== null && !el.disabled){
+      el.focus(); el.select && el.select();
+    } else {
+      this.addLine();
+    }
   },
 
   onlyDigits(el){
@@ -1024,7 +1068,7 @@ const App = {
     const n = Math.floor(Math.random()*100);
     document.getElementById('numInput').value = String(n).padStart(2,'0');
     const sel = document.getElementById('drawSelect');
-    const isNica = sel && sel.value.toLowerCase().includes('nica');
+    const isNica = sel && sinReventado(sel.value);
     if(!isNica) {
       document.getElementById('revInput').focus();
     } else {
@@ -1040,7 +1084,7 @@ const App = {
     const num = numRaw ? numRaw.padStart(2,'0') : '';
     const amt = parseFloat(document.getElementById('amtInput').value);
     
-    const isNica = draw.name.toLowerCase().includes('nica');
+    const isNica = sinReventado(draw.name);
     const revRaw = !isNica ? document.getElementById('revInput').value.trim() : '';
     const rev = revRaw ? parseFloat(revRaw) : 0;
 
@@ -1170,9 +1214,12 @@ const App = {
       ${Object.keys(reventGroups).sort((a,b)=>a-b).map(amt=>`<div class="row"><span>${reventGroups[amt].join('-')}</span><span>${money(amt)}</span></div>`).join('')}
     ` : '';
 
-    const footerRules = t.draw.toLowerCase().includes('nica') 
-      ? `<div class="small">Sorteo Nica · Directo paga x80</div><hr>` 
-      : `<div class="small">Directo paga x85 · Reventado x200</div><hr>`;
+    const nameL = t.draw.toLowerCase();
+    const footerRules = nameL.includes('nica')
+      ? `<div class="small">Sorteo Nica · Directo paga x80</div><hr>`
+      : nameL.includes('primera')
+        ? `<div class="small">La Primera · Directo paga x85</div><hr>`
+        : `<div class="small">Directo paga x85 · Reventado x200</div><hr>`;
 
     document.getElementById('printArea').innerHTML = `
       <div class="center big">TIEMPOS SAN MIGUEL</div>
@@ -1359,6 +1406,7 @@ const App = {
     const opts = DRAWS.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
     ['resDraw', 'closeDraw'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = opts; });
     ['resDate', 'closeDate'].forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = crDateStr(); });
+    this.onResDrawChange();
   },
 
   calcPremio(t, res){
@@ -1369,7 +1417,7 @@ const App = {
 
     t.lines.forEach(l=>{
       if(l.num === res.numero) total += l.amt * multiplier;
-      if(!isNica && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 200;
+      if(!sinReventado(t.draw) && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 200;
     });
     return total;
   },
@@ -1448,6 +1496,15 @@ const App = {
     `).join('');
   },
 
+  onResDrawChange(){
+    const sel = document.getElementById('resDraw');
+    const rev = document.getElementById('resReventadoType');
+    if(!sel || !rev) return;
+    const off = sinReventado(sel.value);
+    rev.disabled = off;
+    if(off) rev.value = '';
+  },
+
   async saveResult(){
     if(this.currentRole !== 'admin') return;
     const draw = document.getElementById('resDraw').value;
@@ -1457,7 +1514,7 @@ const App = {
     
     if(!draw || !crDate || !numeroRaw){ alert('Completá sorteo, fecha y número ganador.'); return; }
     
-    const isNica = draw.toLowerCase().includes('nica');
+    const isNica = sinReventado(draw);
     if(!isNica && !numeroReventadoType){ alert('Debes seleccionar obligatoriamente si cayó Bola Reventada (br) o Bola Blanca (bb).'); return; }
 
     const numero = numeroRaw.padStart(2,'0');
@@ -1532,6 +1589,57 @@ const App = {
     });
     document.getElementById('resTable').classList.toggle('hidden', arr.length===0);
     document.getElementById('resEmpty').classList.toggle('hidden', arr.length>0);
+    this.renderNumeros();
+  },
+
+  populateNumerosDrawSelect(){
+    const sel = document.getElementById('numDraw');
+    if(sel) sel.innerHTML = '<option value="">Todos</option>' + DRAWS.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+  },
+
+  clearNumerosFilters(){
+    document.getElementById('numDateFrom').value = '';
+    document.getElementById('numDateTo').value = '';
+    document.getElementById('numDraw').value = '';
+    this.renderNumeros();
+  },
+
+  renderNumeros(){
+    const body = document.getElementById('numBody');
+    if(!body) return;
+    const from = document.getElementById('numDateFrom').value;
+    const to = document.getElementById('numDateTo').value;
+    const draw = document.getElementById('numDraw').value;
+
+    const closeMin = name => { const d = DRAWS.find(x => x.name === name); return d ? d.closeH*60 + d.closeM : 0; };
+
+    const list = this.results.filter(r => {
+      if(from && r.crDate < from) return false;
+      if(to && r.crDate > to) return false;
+      if(draw && r.draw !== draw) return false;
+      return true;
+    }).sort((a,b) => b.crDate.localeCompare(a.crDate) || closeMin(b.draw) - closeMin(a.draw))
+      .slice(0, 100);
+
+    body.innerHTML = '';
+    list.forEach(r => {
+      const rev = r.numeroReventadoType === 'br' ? 'Bola Reventada (br)'
+                : r.numeroReventadoType === 'bb' ? 'Bola Blanca (bb)' : '—';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="mono">${escapeHtml(formatDMY(r.crDate))}</td>
+        <td>${escapeHtml(r.draw)}</td>
+        <td class="mono" style="font-weight:bold; font-size:16px; color:var(--gold);">${escapeHtml(r.numero)}</td>
+        <td>${escapeHtml(rev)}</td>
+      `;
+      body.appendChild(tr);
+    });
+    document.getElementById('numTable').classList.toggle('hidden', list.length === 0);
+    const empty = document.getElementById('numEmpty');
+    empty.classList.toggle('hidden', list.length > 0);
+    empty.textContent = this.results.length === 0
+      ? 'Todavía no hay resultados registrados'
+      : 'No hay resultados con esos filtros';
   },
 
   populateReportDrawSelect(){
