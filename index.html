@@ -491,6 +491,25 @@
           Al guardar se recalcula automáticamente el premio de todos los tiquetes de ese sorteo y esa fecha en la base de datos de Firestore.
         </div>
       </div>
+      <!-- Pégalo aquí abajo: -->
+      <div class="panel">
+        <h3>Cerrar sorteo manualmente</h3>
+        <div class="field"><label>Sorteo</label><select id="closeDraw" class="draw-select"></select></div>
+        <div class="field"><label>Fecha (Costa Rica)</label><input id="closeDate" type="date"></div>
+        <div class="field">
+          <label>Motivo (lo verán los vendedores)</label>
+          <input id="closeReason" list="closeReasonList" placeholder="ej. Feriado" maxlength="80">
+          <datalist id="closeReasonList">
+            <option value="Feriado"></option>
+            <option value="Sorteo cancelado por la lotería"></option>
+            <option value="Problemas técnicos"></option>
+          </datalist>
+        </div>
+        <button class="btn-small gold" style="width:100%;" onclick="App.closeDrawManually()">Cerrar sorteo</button>
+
+        <h3 style="margin-top:18px;">Cierres activos</h3>
+        <div id="closuresList"><div class="empty-note">No hay cierres manuales activos</div></div>
+      </div>
     </div>
   </div>
 
@@ -627,13 +646,13 @@ function escapeHtml(str){
 }
 
 const DRAWS = [
-  {key:'tica_dia',    name:'Tica Día',       country:'CR', closeH:12, closeM:55},
-  {key:'tica_tarde',  name:'Tica Tarde',     country:'CR', closeH:16, closeM:30},
-  {key:'tica_noche',  name:'Tica Noche',     country:'CR', closeH:19, closeM:30},
-  {key:'nica_manana', name:'Nica Mañana',    country:'NI', closeH:11, closeM:0},
-  {key:'nica_tarde',  name:'Nica Tarde',     country:'NI', closeH:15, closeM:0},
-  {key:'nica_vesper', name:'Nica Vespertina',country:'NI', closeH:18, closeM:0, weekendOnly:true},
-  {key:'nica_noche',  name:'Nica Noche',     country:'NI', closeH:21, closeM:0},
+  {key:'tica_dia',    name:'Tica Día (12:55 PM)',       country:'CR', closeH:12, closeM:55},
+  {key:'tica_tarde',  name:'Tica Tarde (4:30 PM)',     country:'CR', closeH:16, closeM:30},
+  {key:'tica_noche',  name:'Tica Noche (7:30 PM)',     country:'CR', closeH:19, closeM:30},
+  {key:'nica_manana', name:'Nica Mañana (11:00 AM)',    country:'NI', closeH:11, closeM:0},
+  {key:'nica_tarde',  name:'Nica Tarde (3:00 PM)',     country:'NI', closeH:15, closeM:0},
+  {key:'nica_vesper', name:'Nica Vespertina (6:00 PM)',country:'NI', closeH:18, closeM:0, weekendOnly:true},
+  {key:'nica_noche',  name:'Nica Noche (9:00 PM)',     country:'NI', closeH:21, closeM:0},
 ];
 function getCRWeekday(){
   const wd = new Intl.DateTimeFormat('en-US', {timeZone:'America/Costa_Rica', weekday:'short'}).format(new Date());
@@ -646,7 +665,10 @@ function fmtClose(draw){
   const ampm = draw.closeH<12 ? 'AM':'PM';
   return `${h12}:${String(draw.closeM).padStart(2,'0')} ${ampm}`;
 }
-function isDrawOpen(draw, now){ return (now.h*60+now.m) < (draw.closeH*60+draw.closeM); }
+function isDrawOpen(draw, now){
+  if(App.getClosure(draw)) return false;   // cerrado manualmente por el admin
+  return (now.h*60+now.m) < (draw.closeH*60+draw.closeM);
+}
 function movDateKey(m){
   if(m.crDate) return m.crDate;
   const parts = (m.date||'').split('/');
@@ -661,6 +683,7 @@ const App = {
   tickets: [],
   movs: [],
   results: [],
+  closures: [],
   cierres: [],
   maxBet: 20000,
   processedDraws: {},
@@ -763,7 +786,7 @@ const App = {
   clearSubscriptions() {
     this.unsubscribes.forEach(u => u());
     this.unsubscribes = [];
-    this.tickets = []; this.movs = []; this.results = []; this.cierres = [];
+    this.tickets = []; this.movs = []; this.results = []; this.cierres = []; this.closures = [];
   },
 
   subscribeToFirestore() {
@@ -812,6 +835,17 @@ const App = {
       this.renderCierres();
     });
     this.unsubscribes.push(unsubCierres);
+
+    const unsubClosures = window.fs.onSnapshot(
+      window.fs.query(window.fs.collection(window.fs.db, 'configuracion'), window.fs.where('tipo', '==', 'cierre_manual')),
+      (snap) => {
+        this.closures = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+        this.renderClosures();
+        this.populateDrawSelect();
+        this.refreshDrawStatus();
+      }
+    );
+    this.unsubscribes.push(unsubClosures);
   },
 
   async getNextSeq(type) {
@@ -858,22 +892,23 @@ const App = {
     const now = getCRTime();
     const todaysDraws = DRAWS.filter(d=>isDrawActiveToday(d));
 
-    // Firma del estado actual: qué sorteos hay y cuáles están abiertos.
-    // Si no cambió nada, no se toca el select (así no se pierde la selección).
-    const signature = todaysDraws.map(d => d.key + ':' + (isDrawOpen(d, now) ? 1 : 0)).join('|');
+    const signature = todaysDraws.map(d => {
+      const cl = this.getClosure(d);
+      return d.key + ':' + (isDrawOpen(d, now) ? 1 : 0) + ':' + (cl ? cl.motivo : '');
+    }).join('|');
     if(sel.dataset.sig === signature) return;
     sel.dataset.sig = signature;
-    this.renderReports();   // <-- nueva: refresca el botón ✕ cuando cambia el estado de los sorteos
+    this.renderReports();
 
-    const previous = sel.value; // lo que el vendedor había elegido
+    const previous = sel.value;
 
     sel.innerHTML = todaysDraws.map(d=>{
       const open = isDrawOpen(d, now);
-      return `<option value="${d.name}" ${open?'':'disabled'}>${d.name} · ${d.country} · cierra ${fmtClose(d)}${open?'':' (cerrado)'}</option>`;
+      const cl = this.getClosure(d);
+      const tag = open ? '' : (cl ? ` (cerrado: ${escapeHtml(cl.motivo || 'administración')})` : ' (cerrado)');
+      return `<option value="${d.name}" ${open?'':'disabled'}>${d.name} · ${d.country} · cierra ${fmtClose(d)}${tag}</option>`;
     }).join('');
 
-    // Conservar la selección previa si ese sorteo sigue abierto;
-    // si no, ir al primer sorteo abierto.
     const prevDraw = todaysDraws.find(d => d.name === previous);
     if(prevDraw && isDrawOpen(prevDraw, now)){
       sel.value = previous;
@@ -916,12 +951,16 @@ const App = {
     const banner = document.getElementById('drawStatus');
     if(!sel || !banner) return;
     const draw = DRAWS.find(d=>d.name===sel.value);
+    const closure = draw ? this.getClosure(draw) : null;
     const open = draw ? isDrawOpen(draw, getCRTime()) : false;
     banner.classList.remove('hidden');
     if(open){
       banner.className = 'status-banner open';
       banner.textContent = `Sorteo abierto · cierra a las ${fmtClose(draw)} hora Costa Rica.`;
-    }else{
+    } else if(closure){
+      banner.className = 'status-banner closed';
+      banner.textContent = `Sorteo cerrado por la administración. Motivo: ${closure.motivo}`;
+    } else {
       banner.className = 'status-banner closed';
       banner.textContent = draw ? `Este sorteo ya cerró a las ${fmtClose(draw)}. No se pueden agregar ni confirmar ventas.` : 'Seleccioná un sorteo.';
     }
@@ -1317,10 +1356,9 @@ const App = {
   },
 
   populateResultDrawSelect(){
-    const sel = document.getElementById('resDraw');
-    if(sel) sel.innerHTML = DRAWS.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
-    const dateEl = document.getElementById('resDate');
-    if(dateEl && !dateEl.value) dateEl.value = crDateStr();
+    const opts = DRAWS.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
+    ['resDraw', 'closeDraw'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = opts; });
+    ['resDate', 'closeDate'].forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = crDateStr(); });
   },
 
   calcPremio(t, res){
@@ -1334,6 +1372,80 @@ const App = {
       if(!isNica && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 200;
     });
     return total;
+  },
+
+  getClosure(draw, dateStr){
+    const d = dateStr || crDateStr();
+    return this.closures.find(c => c.draw === draw.name && c.crDate === d && c.estado === 'cerrado') || null;
+  },
+
+  async closeDrawManually(){
+    if(this.currentRole !== 'admin') return;
+    const drawName = document.getElementById('closeDraw').value;
+    const crDate = document.getElementById('closeDate').value;
+    const motivo = document.getElementById('closeReason').value.trim();
+
+    if(!drawName || !crDate){ alert('Elegí el sorteo y la fecha.'); return; }
+    if(crDate < crDateStr()){ alert('La fecha no puede ser anterior a hoy.'); return; }
+    if(!motivo){ alert('Escribí el motivo del cierre.'); return; }
+
+    const afectados = this.tickets.filter(t => t.draw === drawName && t.crDate === crDate).length;
+    const aviso = afectados
+      ? `\n\nYa hay ${afectados} tiquete(s) vendido(s) para ese sorteo y fecha. No se borran automáticamente; podés eliminarlos desde Reportes.`
+      : '';
+    if(!confirm(`¿Cerrar ${drawName} el ${formatDMY(crDate)}?\nMotivo: ${motivo}${aviso}`)) return;
+
+    try {
+      const id = `cierre_${crDate}_${drawName.replace(/\s+/g,'')}`;
+      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', id), {
+        tipo: 'cierre_manual',
+        estado: 'cerrado',
+        draw: drawName,
+        crDate,
+        motivo,
+        cerradoPor: this.currentProfile.name,
+        ts: new Date().toISOString()
+      });
+      document.getElementById('closeReason').value = '';
+      alert('Sorteo cerrado. Los vendedores ya no podrán vender en él.');
+    } catch(e){
+      console.error(e);
+      alert('Error al cerrar el sorteo.');
+    }
+  },
+
+  async reopenDraw(id){
+    if(this.currentRole !== 'admin') return;
+    if(!confirm('¿Reabrir este sorteo para ventas?')) return;
+    try {
+      await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'configuracion', id));
+    } catch(e){
+      console.error(e);
+      alert('Error al reabrir el sorteo.');
+    }
+  },
+
+  renderClosures(){
+    const box = document.getElementById('closuresList');
+    if(!box) return;
+    const today = crDateStr();
+    const list = this.closures
+      .filter(c => c.crDate >= today)
+      .sort((a,b) => (a.crDate + a.draw).localeCompare(b.crDate + b.draw));
+
+    if(!list.length){
+      box.innerHTML = '<div class="empty-note">No hay cierres manuales activos</div>';
+      return;
+    }
+    box.innerHTML = list.map(c => `
+      <div style="border-bottom:1px solid var(--navy-line); padding:10px 0; display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+        <div style="font-size:12.5px; line-height:1.5;">
+          <b>${escapeHtml(c.draw)}</b> · <span class="mono">${escapeHtml(formatDMY(c.crDate))}</span><br>
+          <span style="color:var(--text-muted);">${escapeHtml(c.motivo || '')}</span>
+        </div>
+        <button class="btn-small" onclick="App.reopenDraw('${escapeHtml(c._id)}')">Reabrir</button>
+      </div>
+    `).join('');
   },
 
   async saveResult(){
