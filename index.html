@@ -1220,7 +1220,7 @@ const App = {
 
     const nameL = t.draw.toLowerCase();
     const footerRules = nameL.includes('nica')
-      ? `<div class="small">Sorteo Nica · Directo paga x80</div><hr>`
+      ? `<div class="small">Sorteo Nica · Directo paga x85</div><hr>`
       : nameL.includes('primera')
         ? `<div class="small">La Primera · Directo paga x85</div><hr>`
         : `<div class="small">Directo paga x85 · Reventado x200</div><hr>`;
@@ -1417,7 +1417,7 @@ const App = {
   calcPremio(t, res){
     let total = 0;
     const isNica = t.draw.toLowerCase().includes('nica');
-    const multiplier = isNica ? 80 : 85;
+    const multiplier = isNica ? 85 : 85;
     const esReventadoGanador = res.numeroReventadoType === 'br';
 
     t.lines.forEach(l=>{
