@@ -7,183 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --navy-deep:#0E1B2C; --navy-surface:#16283F; --navy-line:#263A55;
-    --gold:#E3AE3F; --paper:#FAF6EC; --ink:#1C1710;
-    --text:#E9EEF5; --text-muted:#90A4BE; --green:#4FAE7C; --red:#D66C5B;
-  }
-  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ } }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    background:var(--navy-deep); color:var(--text); font-family:'Inter',sans-serif;
-    min-height:100%; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-  }
-  html,body{height:100%;}
-  html{scroll-padding-top:env(safe-area-inset-top,0px);}
-  h1,h2,h3{font-family:'Fraunces',serif; font-weight:700;}
-  .mono{font-family:'IBM Plex Mono',monospace;}
-  a{color:inherit;}
-  button{font-family:'Inter',sans-serif;}
-  .hidden{display:none !important;}
-
-  /* ---------- barra lateral ---------- */
-  .app-shell{display:flex; min-height:100vh; align-items:stretch;}
-  .sidebar{
-    width:208px; flex:none; background:var(--navy-surface); border-right:1px solid var(--navy-line);
-    display:flex; flex-direction:column; padding:20px 14px; padding-top:calc(20px + env(safe-area-inset-top,0px));
-    position:sticky; top:0; align-self:flex-start; height:100vh; overflow-y:auto;
-  }
-  .main-col{flex:1; min-width:0;}
-  .sidebar .logo{padding:0 8px; margin-bottom:20px;}
-  .sidebar-foot{
-    margin-top:auto; padding-top:14px; border-top:1px solid var(--navy-line);
-    padding-bottom:env(safe-area-inset-bottom,0px);
-  }
-  @media(max-width:760px){
-    .app-shell{flex-direction:column;}
-    .sidebar{
-      width:100%; height:auto; position:static; flex-direction:row; align-items:center;
-      overflow-x:auto; padding:10px 14px; gap:14px;
-    }
-    .sidebar .logo{margin-bottom:0; white-space:nowrap;}
-    .nav-links{flex-direction:row !important;}
-    .sidebar-foot{margin-top:0; margin-left:auto; padding-top:0; padding-left:14px; border-top:none; border-left:1px solid var(--navy-line); white-space:nowrap;}
-  }
-
-  /* ---------- topbar ---------- */
-  .topbar{
-    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
-    padding:12px 22px; padding-top:calc(12px + env(safe-area-inset-top,0px));
-    background:var(--navy-surface); border-bottom:1px solid var(--navy-line);
-    position:sticky; top:0; z-index:10;
-  }
-  .logo{display:flex; align-items:center; gap:9px; font-family:'Fraunces',serif; font-weight:700; font-size:17px;}
-  .logo span{color:var(--gold);}
-  .nav-links{display:flex; flex-direction:column; gap:3px;}
-  .nav-links button{
-    background:none; border:none; color:var(--text-muted); font-size:13.5px; font-weight:500;
-    padding:9px 12px; border-radius:7px; cursor:pointer; text-align:left;
-  }
-  .nav-links button.active{background:var(--navy-line); color:var(--text);}
-  .spacer{flex:1;}
-  .balance-pill{
-    background:rgba(79,174,124,0.12); border:1px solid rgba(79,174,124,0.4); color:var(--green);
-    font-family:'IBM Plex Mono',monospace; font-size:13px; padding:6px 13px; border-radius:20px;
-  }
-  .cr-clock{
-    background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--gold);
-    font-size:13px; padding:6px 13px; border-radius:20px; letter-spacing:0.5px;
-  }
-  .cr-clock small{color:var(--text-muted); font-family:'Inter',sans-serif; margin-right:6px; font-size:11px;}
-  .status-banner{border-radius:8px; padding:11px 13px; font-size:13px; margin-bottom:14px;}
-  .status-banner.open{background:rgba(79,174,124,0.12); border:1px solid rgba(79,174,124,0.4); color:var(--green);}
-  .status-banner.closed{background:rgba(214,108,91,0.12); border:1px solid rgba(214,108,91,0.4); color:var(--red);}
-  select:disabled, input:disabled, button:disabled{opacity:0.45; cursor:not-allowed;}
-  .user-chip{font-size:12.5px; color:var(--text-muted); display:flex; align-items:center; gap:10px;}
-  .user-chip b{color:var(--text); font-weight:600;}
-  .btn-logout{
-    background:none; border:1px solid var(--navy-line); color:var(--text-muted);
-    font-size:12px; padding:6px 12px; border-radius:7px; cursor:pointer;
-    display:inline-flex; align-items:center; gap:5px; font-family:'Inter',sans-serif;
-  }
-  .btn-logout:hover{ border-color:var(--red); color:var(--red); }
-
-  /* ---------- login/register ---------- */
-  #login{
-    min-height:calc(100vh - 20px); display:flex; align-items:center; justify-content:center; padding:40px 20px;
-    background:radial-gradient(circle at 20% 20%, rgba(227,174,63,0.08), transparent 45%), var(--navy-deep);
-  }
-  .auth-card{width:100%; max-width:380px;}
-  .brand{text-align:center; margin-bottom:26px;}
-  .ticket-mark{
-    display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px;
-    border:1.5px solid var(--gold); border-radius:50%; color:var(--gold);
-    font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; margin-bottom:12px;
-  }
-  .brand h1{font-size:24px;}
-  .brand p{color:var(--text-muted); font-size:13px; margin-top:4px;}
-  .card{background:var(--navy-surface); border:1px solid var(--navy-line); border-radius:14px; padding:26px;}
-  .field{margin-bottom:14px;}
-  .field label{display:block; font-size:12px; color:var(--text-muted); margin-bottom:5px;}
-  .field input, .field select{
-    width:100%; background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text);
-    padding:10px 11px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
-  }
-  .field input:focus, .field select:focus{outline:1.5px solid var(--gold); border-color:var(--gold);}
-  .btn-primary{
-    width:100%; background:var(--gold); color:#241a05; border:none; padding:11px; border-radius:8px;
-    font-size:14px; font-weight:600; cursor:pointer;
-  }
-  .btn-primary:disabled{opacity:0.5; cursor:default;}
-  .error-msg{background:rgba(214,108,91,0.12); border:1px solid rgba(214,108,91,0.4); color:var(--red);
-    padding:9px 11px; border-radius:8px; font-size:12.5px; margin-bottom:14px;}
-
-  /* ---------- layout ---------- */
-  .layout{display:grid; grid-template-columns:1fr 340px; gap:18px; padding:20px 22px; max-width:1280px; margin:0 auto;}
-  @media(max-width:880px){.layout{grid-template-columns:1fr;}}
-  .layout > div{display:flex; flex-direction:column;}
-  .layout > div > .panel:last-child{flex:1 1 auto;}
-  .panel{background:var(--navy-surface); border:1px solid var(--navy-line); border-radius:12px; padding:20px; margin-bottom:18px;}
-  .panel h3{font-size:13.5px; font-weight:600; color:var(--text-muted); margin-bottom:14px;}
-  .draw-select{width:100%; background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text);
-    padding:10px 12px; border-radius:8px; font-size:14px; margin-bottom:14px;}
-
-  .bet-row{display:grid; grid-template-columns:1fr 1fr 1.2fr auto; gap:9px; align-items:end; margin-bottom:14px;}
-  .bet-row .field{margin-bottom:0;}
-  .add-btn{background:var(--gold); color:#241a05; border:none; padding:10px 15px; border-radius:8px;
-    font-weight:600; font-size:13.5px; cursor:pointer; height:38px;}
-
-  table{width:100%; border-collapse:collapse; font-size:13px;}
-  th{text-align:left; color:var(--text-muted); font-weight:500; font-size:12px; padding:6px 8px; border-bottom:1px solid var(--navy-line);}
-  td{padding:8px; border-bottom:1px solid var(--navy-line);}
-  .empty-note{border:1px dashed var(--navy-line); border-radius:8px; padding:14px; text-align:center; color:var(--text-muted); font-size:13px;}
-  .del-x{background:none; border:none; color:var(--red); cursor:pointer; font-size:14px;}
-
-  .module-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-  @media(max-width:600px){.module-grid{grid-template-columns:repeat(2,1fr);}}
-  .module{background:var(--navy-deep); border:1px solid var(--navy-line); border-radius:10px; padding:14px;}
-  .module .m-label{font-size:11.5px; color:var(--text-muted); margin-bottom:5px;}
-  .module .m-value{font-family:'IBM Plex Mono',monospace; font-size:18px;}
-  .module.up .m-value{color:var(--green);}
-  .module.down .m-value{color:var(--red);}
-
-  .btn-small{background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text); padding:6px 11px;
-    border-radius:7px; font-size:12px; cursor:pointer;}
-  .btn-small.gold{background:var(--gold); color:#241a05; border:none; font-weight:600;}
-
-  .search-row{display:flex; gap:8px; margin-bottom:14px;}
-  .search-row input{flex:1; background:var(--navy-deep); border:1px solid var(--navy-line); color:var(--text);
-    padding:10px 12px; border-radius:8px; font-size:14px;}
-
-  /* receipt */
-  .receipt-wrap{background:var(--paper); color:var(--ink); border-radius:4px; padding:14px 10px;
-    font-family:'IBM Plex Mono',monospace; font-size:20px; line-height:1.6;}
-  .receipt-wrap .center{text-align:center;}
-  .receipt-wrap hr{border:none; border-top:1px dashed #b7ac93; margin:10px 0;}
-  .receipt-wrap .row{display:flex; justify-content:space-between;}
-  .receipt-wrap .big{font-size:26px; font-weight:600;}
-  .receipt-wrap .small{font-size:15px; line-height:1.5;}
-
-  .warn-banner{
-    background:rgba(214,108,91,0.12); border:1px solid var(--red); color:#e8b3a8;
-    padding:10px 12px; border-radius:8px; font-size:12.5px; line-height:1.5; margin-bottom:14px;
-  }
-
-  @media print{
-    @page{ size:100mm auto; margin:0; }
-    html, body{ width:100mm; height:auto; margin:0 !important; padding:0 !important; }
-    body *{visibility:hidden;}
-    #printArea, #printArea *{visibility:visible;}
-    #printArea{
-      position:absolute; top:0; left:0; width:100mm; box-sizing:border-box;
-      padding:2mm 3mm; margin:0 !important;
-      font-size:18pt !important; line-height:1.45 !important;
-    }
-    #printArea .big{ font-size:24pt !important; }
-    #printArea .small{ font-size:14pt !important; }
-  }
-</style>
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
@@ -276,8 +100,12 @@
   <div class="layout tab-panel hidden" data-tab="finanzas">
     <div>
       <div class="panel">
-        <h3>Movimientos</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+          <h3 id="movTitle" style="margin:0;">Movimientos de hoy</h3>
+          <button class="btn-small" id="movToggleBtn" onclick="App.toggleMovHistory()">Ver otros días ▾</button>
+        </div>
         <div id="riskBanner" class="warn-banner hidden"></div>
+        <div id="movHistoryFilters" class="hidden">
         <div class="bet-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto; margin-bottom:14px;">
           <div class="field"><label>Desde</label><input id="movDateFrom" type="date" onchange="App.renderAll()"></div>
           <div class="field"><label>Hasta</label><input id="movDateTo" type="date" onchange="App.renderAll()"></div>
@@ -288,6 +116,8 @@
               <option value="Ingreso">Ingreso</option>
               <option value="Pago">Pago a ganador</option>
               <option value="Gasto">Gasto</option>
+              <option value="Retiro">Retiro de caja</option>
+              <option value="Abono">Abono de caja</option>
             </select>
           </div>
           <div class="field" id="movOwnerField">
@@ -300,10 +130,19 @@
           </div>
           <button class="btn-small" style="height:38px;" onclick="App.clearMovFilters()">Quitar filtros</button>
         </div>
+        </div>
         <div id="movEmpty" class="empty-note">Aún no hay movimientos registrados</div>
         <table id="movTable" class="hidden">
           <thead><tr><th>Fecha</th><th>Tipo</th><th>Vendedor</th><th>Detalle</th><th>Monto</th><th></th></tr></thead>
           <tbody id="movBody"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>Retiros y abonos</h3>
+        <div id="cashEmpty" class="empty-note">Todavía no hay retiros ni abonos registrados</div>
+        <table id="cashTable" class="hidden">
+          <thead><tr><th>Fecha</th><th>Negocio</th><th>Tipo</th><th>Detalle</th><th>Monto</th></tr></thead>
+          <tbody id="cashBody"></tbody>
         </table>
       </div>
       <div class="panel">
@@ -336,13 +175,35 @@
         <div class="module-grid" style="grid-template-columns:1fr;">
           <div class="module up"><div class="m-label">Balance actual</div><div class="m-value mono" id="balanceFull">₡0.00</div></div>
           <div class="module"><div class="m-label">Total ingresos</div><div class="m-value mono" id="totalIn">₡0.00</div></div>
-          <div class="module down"><div class="m-label">Total pagado</div><div class="m-value mono" id="totalOut">₡0.00</div></div>
+          <div class="module down"><div class="m-label">Total pagado (premios y gastos)</div><div class="m-value mono" id="totalOut">₡0.00</div></div>
+          <div class="module down"><div class="m-label">Total retiros</div><div class="m-value mono" id="totalRetiros">₡0.00</div></div>
+          <div class="module up"><div class="m-label">Total abonos</div><div class="m-value mono" id="totalAbonos">₡0.00</div></div>
         </div>
       </div>
       <div class="panel hidden" id="limitsPanel">
         <h3>Límite de apuesta</h3>
         <div class="field"><label>Monto máximo por número (directo + reventado juntos)</label><input id="maxBetInput" type="number" min="50" step="50" placeholder="20000"></div>
         <button class="btn-small" style="width:100%;" onclick="App.saveMaxBet()">Guardar límite en la Nube</button>
+      </div>
+      <div class="panel hidden" id="retiroPanel">
+        <h3>Retiros y abonos de caja</h3>
+        <div class="field">
+          <label>Negocio</label>
+          <select id="retiroOwner">
+            <option value="libreria">Librería</option>
+            <option value="supermercado">Supermercado</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Operación</label>
+          <select id="retiroTipo">
+            <option value="Retiro">Retiro: saqué dinero (resta del balance)</option>
+            <option value="Abono">Abono: le debo al negocio (suma al balance)</option>
+          </select>
+        </div>
+        <div class="field"><label>Detalle (opcional)</label><input id="retiroDetalle" placeholder="ej. retiro de la semana" maxlength="60" autocomplete="off"></div>
+        <div class="field"><label>Monto</label><input id="retiroMonto" type="number" min="1" step="1" placeholder="0"></div>
+        <button class="btn-small gold" style="width:100%;" onclick="App.registerCashMove()">Registrar movimiento</button>
       </div>
       <div class="panel">
         <h3>Registrar gasto</h3>
@@ -400,7 +261,11 @@
       </div>
       <!-- ▼▼▼ PEGAR AQUÍ ▼▼▼ -->
       <div class="panel">
-        <h3>Números que han salido</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+          <h3 id="numTitle" style="margin:0;">Números que salieron hoy</h3>
+          <button class="btn-small" id="numToggleBtn" onclick="App.toggleNumHistory()">Ver otros días ▾</button>
+        </div>
+        <div id="numHistoryFilters" class="hidden">
         <div class="bet-row" style="grid-template-columns:1fr 1fr 1.3fr auto; margin-bottom:14px;">
           <div class="field"><label>Desde</label><input id="numDateFrom" type="date" onchange="App.renderNumeros()"></div>
           <div class="field"><label>Hasta</label><input id="numDateTo" type="date" onchange="App.renderNumeros()"></div>
@@ -409,6 +274,7 @@
             <select id="numDraw" onchange="App.renderNumeros()"><option value="">Todos</option></select>
           </div>
           <button class="btn-small" style="height:38px;" onclick="App.clearNumerosFilters()">Quitar filtros</button>
+        </div>
         </div>
         <div id="numEmpty" class="empty-note">Todavía no hay resultados registrados</div>
         <table id="numTable" class="hidden">
@@ -433,11 +299,15 @@
   <div class="layout tab-panel hidden" data-tab="reportes">
     <div>
       <div class="panel">
-        <h3>Tiquetes emitidos</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+          <h3 id="repTitle" style="margin:0;">Tiquetes de hoy</h3>
+          <button class="btn-small" id="repToggleBtn" onclick="App.toggleRepHistory()">Ver otros días ▾</button>
+        </div>
         <div class="search-row" style="gap:0;">
           <span class="mono" style="background:var(--navy-line); border:1px solid var(--navy-line); border-right:none; padding:0 10px; border-radius:8px 0 0 8px; color:var(--text-muted); font-size:13.5px; display:flex; align-items:center;">TSM-</span>
           <input id="repSearch" placeholder="AAA-00001" style="border-radius:0 8px 8px 0;" oninput="App.renderAll()">
         </div>
+        <div id="repHistoryFilters" class="hidden">
         <div class="bet-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto; margin-bottom:14px;">
           <div class="field"><label>Desde</label><input id="repDateFrom" type="date" onchange="App.renderAll()"></div>
           <div class="field"><label>Hasta</label><input id="repDateTo" type="date" onchange="App.renderAll()"></div>
@@ -457,6 +327,7 @@
             </select>
           </div>
           <button class="btn-small" style="height:38px;" onclick="App.clearReportFilters()">Quitar filtros</button>
+        </div>
         </div>
         <div id="repEmpty" class="empty-note">No hay tiquetes emitidos todavía</div>
         <table id="repTable" class="hidden">
@@ -483,8 +354,22 @@
   <div class="layout tab-panel hidden" data-tab="resultados">
     <div>
       <div class="panel">
-        <h3>Resultados registrados</h3>
-        <div id="resEmpty" class="empty-note">Todavía no hay resultados registrados</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+          <h3 id="resTitle" style="margin:0;">Resultados de hoy</h3>
+          <button class="btn-small" id="resToggleBtn" onclick="App.toggleResHistory()">Ver otros días ▾</button>
+        </div>
+        <div id="resHistoryFilters" class="hidden">
+          <div class="bet-row" style="grid-template-columns:1fr 1fr 1.3fr auto; margin-bottom:14px;">
+            <div class="field"><label>Desde</label><input id="resFilterFrom" type="date" onchange="App.renderResults()"></div>
+            <div class="field"><label>Hasta</label><input id="resFilterTo" type="date" onchange="App.renderResults()"></div>
+            <div class="field">
+              <label>Sorteo</label>
+              <select id="resFilterDraw" onchange="App.renderResults()"><option value="">Todos</option></select>
+            </div>
+            <button class="btn-small" style="height:38px;" onclick="App.clearResFilters()">Quitar filtros</button>
+          </div>
+        </div>
+        <div id="resEmpty" class="empty-note">Todavía no hay resultados de hoy</div>
         <table id="resTable" class="hidden">
           <thead><tr><th>Sorteo</th><th>Fecha</th><th>Número</th><th>Reventado</th><th></th></tr></thead>
           <tbody id="resBody"></tbody>
@@ -566,1324 +451,18 @@
   </div>
 </section>
 
-<!-- ================= MÓDULO FIREBASE V10 ================= -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-  import { 
-    initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, addDoc, 
-    updateDoc, deleteDoc, collection, onSnapshot, query, where, runTransaction 
-  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDl0NPag3aKGAnwZDRW--IpWQewwhyb3HY",
-    authDomain: "tiempos-san-miguel.firebaseapp.com",
-    projectId: "tiempos-san-miguel",
-    storageBucket: "tiempos-san-miguel.firebasestorage.app",
-    messagingSenderId: "774681656050",
-    appId: "1:774681656050:web:a199acf3b9c76337aeae6b"
-  };
-
-  const fbApp = initializeApp(firebaseConfig);
-  const fbAuth = getAuth(fbApp);
-  const fbDb = initializeFirestore(fbApp, { localCache: persistentLocalCache() });
-
-  window.firebaseAuth = {
-    signIn: (email, pass) => signInWithEmailAndPassword(fbAuth, email, pass),
-    signOut: () => signOut(fbAuth),
-    onChange: (cb) => onAuthStateChanged(fbAuth, cb),
-    getUserDoc: (uid) => getDoc(doc(fbDb, 'usuarios', uid)),
-    createUser: async (email, pass, name, role) => {
-      import("https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js").then(async ({initializeApp: initSec, deleteApp}) => {
-      });
-    }
-  };
-
-  window.createNewUserAccount = async (email, pass, name, role) => {
-    const secondaryApp = initializeApp(firebaseConfig, "SecondaryAppForCreation");
-    const secondaryAuth = getAuth(secondaryApp);
-    try {
-      const userCred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-      const uid = userCred.user.uid;
-      await setDoc(doc(fbDb, 'usuarios', uid), { name, role, email });
-      await signOut(secondaryAuth);
-      await deleteApp(secondaryApp);
-      return true;
-    } catch(err) {
-      try { deleteApp(secondaryApp); } catch(e){}
-      throw err;
-    }
-  };
-
-  window.fs = { 
-    db: fbDb, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, 
-    onSnapshot, query, where, runTransaction 
-  };
-
-  window.dispatchEvent(new Event('firebase-ready'));
-</script>
+<script type="module" src="js/firebase.js"></script>
 
 <!-- ================= LÓGICA DE APLICACIÓN ================= -->
-<script>
-function ownerLabel(role){
-  return role==='libreria' ? 'Librería' : role==='supermercado' ? 'Supermercado' : role==='admin' ? 'Administración' : (role||'—');
-}
-
-const CLAIM_DAYS = 7;
-const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
-
-function addDaysToDateStr(dateStr, days){
-  const [y,m,d] = dateStr.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m-1, d));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  return dt.toISOString().slice(0,10);
-}
-function formatDMY(dateStr){
-  const [y,m,d] = dateStr.split('-');
-  return `${d}/${m}/${y}`;
-}
-function getCRTime(){
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone:'America/Costa_Rica', hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'
-  }).formatToParts(new Date());
-  const get = t => parseInt(parts.find(p=>p.type===t).value, 10);
-  return { h:get('hour')===24?0:get('hour'), m:get('minute'), s:get('second') };
-}
-function crDateStr(){
-  return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Costa_Rica'}).format(new Date());
-}
-function todayStr(){
-  const [y,m,d] = crDateStr().split('-');
-  return `${d}/${m}/${y}`;
-}
-function normalizeCode(s){ return (s||'').toUpperCase().trim().replace(/^TSM-?/,''); }
-function money(n){ return '₡' + Number(n||0).toLocaleString('es-CR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
-
-function escapeHtml(str){
-  return String(str==null ? '' : str).replace(/[&<>"']/g, c=>({
-    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-  }[c]));
-}
-
-const DRAWS = [
-  {key:'tica_dia',    name:'Tica Día (12:55 PM)',       country:'CR', closeH:12, closeM:55},
-  {key:'tica_tarde',  name:'Tica Tarde (4:30 PM)',     country:'CR', closeH:16, closeM:30},
-  {key:'tica_noche',  name:'Tica Noche (7:30 PM)',     country:'CR', closeH:19, closeM:30},
-  {key:'nica_manana', name:'Nica Mañana (11:00 AM)',    country:'NI', closeH:11, closeM:0},
-  {key:'nica_tarde',  name:'Nica Tarde (3:00 PM)',     country:'NI', closeH:15, closeM:0},
-  {key:'nica_vesper', name:'Nica Vespertina (6:00 PM)',country:'NI', closeH:18, closeM:0, weekendOnly:true},
-  {key:'nica_noche',  name:'Nica Noche (9:00 PM)',     country:'NI', closeH:21, closeM:0},
-  {key:'primera_am',  name:'La Primera (10:00 AM)', country:'DO', closeH:10, closeM:0},
-  {key:'primera_pm',  name:'La Primera (6:00 PM)',  country:'DO', closeH:18, closeM:0},
-];
-
-function sinReventado(name){
-  const n = (name || '').toLowerCase();
-  return n.includes('nica') || n.includes('primera');
-}
-
-function getCRWeekday(){
-  const wd = new Intl.DateTimeFormat('en-US', {timeZone:'America/Costa_Rica', weekday:'short'}).format(new Date());
-  return {Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6}[wd];
-}
-function isWeekendCR(){ const wd = getCRWeekday(); return wd===0 || wd===6; }
-function isDrawActiveToday(draw){ return !draw.weekendOnly || isWeekendCR(); }
-function fmtClose(draw){
-  const h12 = ((draw.closeH+11)%12)+1;
-  const ampm = draw.closeH<12 ? 'AM':'PM';
-  return `${h12}:${String(draw.closeM).padStart(2,'0')} ${ampm}`;
-}
-function isDrawOpen(draw, now){
-  if(App.getClosure(draw)) return false;   // cerrado manualmente por el admin
-  return (now.h*60+now.m) < (draw.closeH*60+draw.closeM);
-}
-function movDateKey(m){
-  if(m.crDate) return m.crDate;
-  const parts = (m.date||'').split('/');
-  return parts.length===3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
-}
-
-const App = {
-  currentLines: [],
-  currentRole: null,
-  currentUid: null,
-  
-  tickets: [],
-  movs: [],
-  results: [],
-  closures: [],
-  cierres: [],
-  maxBet: 20000,
-  processedDraws: {},
-  unsubscribes: [],
-
-  init(){
-    document.querySelectorAll('.nav-links button').forEach(b=>{
-      b.addEventListener('click', ()=>App.switchTab(b.dataset.tab));
-    });
-
-    this.populateDrawSelect();
-    this.populateResultDrawSelect();
-    this.populateReportDrawSelect();
-    this.populateNumerosDrawSelect();
-    this.tickClock();
-    setInterval(()=>this.tickClock(), 1000);
-
-    ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(evt=>{
-      document.addEventListener(evt, ()=>this.resetInactivityTimer(), {passive:true});
-    });
-
-    const startAuthListener = () => {
-      window.firebaseAuth.onChange(async (user) => {
-        if(!user){ 
-          this.currentRole = null; 
-          this.currentUid = null; 
-          this.clearSubscriptions();
-          this.showLogin(); 
-          return; 
-        }
-        try{
-          const snap = await window.firebaseAuth.getUserDoc(user.uid);
-          if(!snap.exists()){
-            document.getElementById('loginError').textContent = 'Esta cuenta no tiene un perfil configurado en Firestore (falta el documento en /usuarios).';
-            document.getElementById('loginError').classList.remove('hidden');
-            window.firebaseAuth.signOut();
-            return;
-          }
-          this.enterApp(user, snap.data());
-        }catch(e){
-          console.error('Error cargando perfil de usuario', e);
-          document.getElementById('loginError').textContent = 'No se pudo cargar el perfil. Revisá tu conexión.';
-          document.getElementById('loginError').classList.remove('hidden');
-        }
-      });
-    };
-    if(window.firebaseAuth) startAuthListener();
-    else window.addEventListener('firebase-ready', startAuthListener, {once:true});
-  },
-
-  resetInactivityTimer(){
-    clearTimeout(this.inactivityTimer);
-    const appEl = document.getElementById('app');
-    if(!appEl || appEl.classList.contains('hidden')) return; 
-    this.inactivityTimer = setTimeout(()=>this.autoLogout(), INACTIVITY_LIMIT_MS);
-  },
-
-  autoLogout(){
-    const appEl = document.getElementById('app');
-    if(!appEl || appEl.classList.contains('hidden')) return;
-    this.logout();
-    alert('Tu sesión se cerró automáticamente por 5 minutos de inactividad.');
-  },
-
-  showLogin(){
-    document.getElementById('app').classList.add('hidden');
-    document.getElementById('login').classList.remove('hidden');
-  },
-
-  login(){
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const pass = document.getElementById('loginPass').value;
-    const err = document.getElementById('loginError');
-    if(!window.firebaseAuth){ err.textContent = 'Firebase todavía no cargó, esperá un segundo.'; err.classList.remove('hidden'); return; }
-    err.classList.add('hidden');
-    window.firebaseAuth.signIn(email, pass)
-      .catch(()=>{
-        err.textContent = 'Correo o contraseña incorrectos.';
-        err.classList.remove('hidden');
-      });
-  },
-
-  logout(){
-    clearTimeout(this.inactivityTimer);
-    if(window.firebaseAuth) window.firebaseAuth.signOut();
-  },
-
-  async enterApp(user, profile){
-    this.currentRole = profile.role;
-    this.currentUid = user.uid;
-    this.currentProfile = profile; 
-    document.getElementById('userName').textContent = `${profile.name} (${ownerLabel(this.currentRole)})`;
-    document.getElementById('login').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    this.applyRoleUI(this.currentRole);
-    this.switchTab(this.currentRole==='admin' ? 'finanzas' : 'ventas');
-    this.resetInactivityTimer();
-    this.subscribeToFirestore();
-  },
-
-  clearSubscriptions() {
-    this.unsubscribes.forEach(u => u());
-    this.unsubscribes = [];
-    this.tickets = []; this.movs = []; this.results = []; this.cierres = []; this.closures = [];
-  },
-
-  subscribeToFirestore() {
-    this.clearSubscriptions();
-    const role = this.currentRole;
-    const isAdmin = role === 'admin';
-
-    const unsubLim = window.fs.onSnapshot(window.fs.doc(window.fs.db, 'configuracion', 'limites'), (snap) => {
-      if(snap.exists()){
-        this.maxBet = snap.data().limiteGeneral || 20000;
-      } else {
-        this.maxBet = 20000;
-      }
-      const mbEl = document.getElementById('maxBetInput');
-      if(mbEl) mbEl.value = this.maxBet;
-    });
-    this.unsubscribes.push(unsubLim);
-
-    let qTiquetes = window.fs.collection(window.fs.db, 'tiquetes');
-    if (!isAdmin) qTiquetes = window.fs.query(qTiquetes, window.fs.where('owner', '==', role));
-    const unsubTiq = window.fs.onSnapshot(qTiquetes, (snap) => {
-      this.tickets = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-      this.renderAll();
-    });
-    this.unsubscribes.push(unsubTiq);
-
-    let qMovs = window.fs.collection(window.fs.db, 'movimientos');
-    if (!isAdmin) qMovs = window.fs.query(qMovs, window.fs.where('owner', '==', role));
-    const unsubMov = window.fs.onSnapshot(qMovs, (snap) => {
-      this.movs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-      this.renderAll();
-    });
-    this.unsubscribes.push(unsubMov);
-
-    const unsubRes = window.fs.onSnapshot(window.fs.collection(window.fs.db, 'resultados'), (snap) => {
-      this.results = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-      this.renderResults();
-      this.renderAll();
-    });
-    this.unsubscribes.push(unsubRes);
-
-    let qCierres = window.fs.collection(window.fs.db, 'cierres');
-    if (!isAdmin) qCierres = window.fs.query(qCierres, window.fs.where('owner', '==', role));
-    const unsubCierres = window.fs.onSnapshot(qCierres, (snap) => {
-      this.cierres = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-      this.renderCierres();
-    });
-    this.unsubscribes.push(unsubCierres);
-
-    const unsubClosures = window.fs.onSnapshot(
-      window.fs.query(window.fs.collection(window.fs.db, 'configuracion'), window.fs.where('tipo', '==', 'cierre_manual')),
-      (snap) => {
-        this.closures = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-        this.renderClosures();
-        this.populateDrawSelect();
-        this.refreshDrawStatus();
-      }
-    );
-    this.unsubscribes.push(unsubClosures);
-  },
-
-  async getNextSeq(type) {
-    const docRef = window.fs.doc(window.fs.db, 'contadores', type);
-    let newSeq = 1;
-    await window.fs.runTransaction(window.fs.db, async (tx) => {
-      const snap = await tx.get(docRef);
-      if(snap.exists()){
-        newSeq = (snap.data().val || 0) + 1;
-      }
-      tx.set(docRef, { val: newSeq }, { merge: true });
-    });
-    return newSeq;
-  },
-
-  applyRoleUI(role){
-    const isAdmin = role === 'admin';
-    const ventasBtn = document.querySelector('.nav-links button[data-tab="ventas"]');
-    if(ventasBtn) ventasBtn.style.display = isAdmin ? 'none' : '';
-    const resBtn = document.querySelector('.nav-links button[data-tab="resultados"]');
-    if(resBtn) resBtn.style.display = isAdmin ? '' : 'none';
-    const usrBtn = document.getElementById('navUsuarios');
-    if(usrBtn) usrBtn.classList.toggle('hidden', !isAdmin);
-
-    const adminBox = document.getElementById('adminBreakdown');
-    if(adminBox) adminBox.classList.toggle('hidden', !isAdmin);
-    const limitsBox = document.getElementById('limitsPanel');
-    if(limitsBox) limitsBox.classList.toggle('hidden', !isAdmin);
-    
-    ['movOwnerField','gastoOwnerField','cierreOwnerField'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.classList.toggle('hidden', !isAdmin);
-    });
-  },
-
-  switchTab(tab){
-    document.querySelectorAll('.nav-links button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('hidden', p.dataset.tab!==tab));
-  },
-
-  populateDrawSelect(){
-    const sel = document.getElementById('drawSelect');
-    if(!sel) return;
-    const now = getCRTime();
-    const todaysDraws = DRAWS.filter(d=>isDrawActiveToday(d));
-
-    const signature = todaysDraws.map(d => {
-      const cl = this.getClosure(d);
-      return d.key + ':' + (isDrawOpen(d, now) ? 1 : 0) + ':' + (cl ? cl.motivo : '');
-    }).join('|');
-    if(sel.dataset.sig === signature) return;
-    sel.dataset.sig = signature;
-    this.renderReports();
-
-    const previous = sel.value;
-
-    sel.innerHTML = todaysDraws.map(d=>{
-      const open = isDrawOpen(d, now);
-      const cl = this.getClosure(d);
-      const tag = open ? '' : (cl ? ` (cerrado: ${escapeHtml(cl.motivo || 'administración')})` : ' (cerrado)');
-      return `<option value="${d.name}" ${open?'':'disabled'}>${d.name} · ${d.country} · cierra ${fmtClose(d)}${tag}</option>`;
-    }).join('');
-
-    const prevDraw = todaysDraws.find(d => d.name === previous);
-    if(prevDraw && isDrawOpen(prevDraw, now)){
-      sel.value = previous;
-    } else {
-      const firstOpen = todaysDraws.find(d => isDrawOpen(d, now));
-      if(firstOpen) sel.value = firstOpen.name;
-    }
-    this.onDrawChange();
-  },
-
-  onDrawChange(){
-    const sel = document.getElementById('drawSelect');
-    if(sel && sinReventado(sel.value) && this.currentLines.some(l => l.rev > 0)){
-      this.currentLines.forEach(l => { l.rev = 0; });
-      this.renderLines();
-      alert('Este sorteo no juega reventado. Se quitó el reventado de las líneas del tiquete.');
-    }
-    this.refreshDrawStatus();
-    this.checkNicaDraw();
-  },
-
-  checkNicaDraw(){
-    const sel = document.getElementById('drawSelect');
-    const revField = document.getElementById('revFieldWrapper');
-    const revInput = document.getElementById('revInput');
-    const betRow = document.getElementById('betRowContainer');
-    if(!sel || !revField || !revInput || !betRow) return;
-
-    const selectedDrawName = sel.value || '';
-    const isNica = selectedDrawName.toLowerCase().includes('nica');
-
-    if(isNica){
-      revField.classList.add('hidden');
-      revInput.disabled = true;
-      revInput.value = ''; // Limpiar el valor si cambian a Nica
-      betRow.style.gridTemplateColumns = '1fr 1fr auto auto';
-    } else {
-      revField.classList.remove('hidden');
-      revInput.disabled = false;
-      betRow.style.gridTemplateColumns = '1fr 1fr 1.2fr auto auto';
-    }
-  },
-
-  refreshDrawStatus(){
-    const sel = document.getElementById('drawSelect');
-    const banner = document.getElementById('drawStatus');
-    if(!sel || !banner) return;
-    const draw = DRAWS.find(d=>d.name===sel.value);
-    const closure = draw ? this.getClosure(draw) : null;
-    const open = draw ? isDrawOpen(draw, getCRTime()) : false;
-    banner.classList.remove('hidden');
-    if(open){
-      banner.className = 'status-banner open';
-      banner.textContent = `Sorteo abierto · cierra a las ${fmtClose(draw)} hora Costa Rica.`;
-    } else if(closure){
-      banner.className = 'status-banner closed';
-      banner.textContent = `Sorteo cerrado por la administración. Motivo: ${closure.motivo}`;
-    } else {
-      banner.className = 'status-banner closed';
-      banner.textContent = draw ? `Este sorteo ya cerró a las ${fmtClose(draw)}. No se pueden agregar ni confirmar ventas.` : 'Seleccioná un sorteo.';
-    }
-
-    const sinRev = draw ? sinReventado(draw.name) : false;
-    ['numInput','amtInput'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !open; });
-
-    const revEl = document.getElementById('revInput');
-    if(revEl) revEl.disabled = !open || sinRev;
-
-    const addBtn = document.querySelector('.add-btn');
-    if(addBtn) addBtn.disabled = !open;
-  },
-
-  tickClock(){
-    const now = getCRTime();
-    const clockEl = document.getElementById('crClock');
-    if(clockEl) clockEl.textContent = `${String(now.h).padStart(2,'0')}:${String(now.m).padStart(2,'0')}:${String(now.s).padStart(2,'0')}`;
-    this.populateDrawSelect();
-    this.refreshDrawStatus();
-    this.processClosedDraws(now);
-  },
-
-  async processClosedDraws(now){
-    const today = crDateStr();
-    for (const d of DRAWS) {
-      if(isDrawOpen(d, now)) continue;
-      if(this.processedDraws[d.key] === today) continue;
-
-      const pendientes = this.tickets.filter(t => t.draw === d.name && t.status === 'pendiente' && t.crDate === today);
-      for (const t of pendientes) {
-        try {
-          const movId = await this.getNextSeq('movimientos');
-          const movRef = window.fs.doc(window.fs.collection(window.fs.db, 'movimientos'));
-
-          await window.fs.runTransaction(window.fs.db, async (tx) => {
-            const tRef = window.fs.doc(window.fs.db, 'tiquetes', t._id);
-            const tSnap = await tx.get(tRef);
-            if(!tSnap.exists() || tSnap.data().status !== 'pendiente') return;
-
-            tx.update(tRef, { status: 'registrada' });
-            tx.set(movRef, {
-              id: 'M' + movId, date: todayStr(), crDate: today,
-              type: 'Ingreso', detail: `Venta ${t.id} · ${t.draw}`,
-              amount: t.total, owner: t.owner, ticketId: t.id, draw: t.draw, locked: false
-            });
-          });
-        } catch (e) { console.error('Error cerrando sorteo:', e); }
-      }
-      this.processedDraws[d.key] = today;
-    }
-  },
-
-  moveNext(e, nextId){
-    if(e.key !== 'Enter') return;
-    e.preventDefault();
-    const el = nextId ? document.getElementById(nextId) : null;
-    if(el && el.offsetParent !== null && !el.disabled){
-      el.focus(); el.select && el.select();
-    } else {
-      this.addLine();
-    }
-  },
-
-  onlyDigits(el){
-    const clean = el.value.replace(/\D+/g, '').slice(0, 2);
-    if(el.value !== clean) el.value = clean;
-  },
-
-  randomNumber(){
-    const n = Math.floor(Math.random()*100);
-    document.getElementById('numInput').value = String(n).padStart(2,'0');
-    const sel = document.getElementById('drawSelect');
-    const isNica = sel && sinReventado(sel.value);
-    if(!isNica) {
-      document.getElementById('revInput').focus();
-    } else {
-      this.addLine();
-    }
-  },
-
-  addLine(){
-    const sel = document.getElementById('drawSelect');
-    const draw = DRAWS.find(d=>d.name===sel.value);
-    if(!draw || !isDrawOpen(draw, getCRTime())){ alert('Este sorteo ya cerró.'); return; }
-    const numRaw = document.getElementById('numInput').value.trim();
-    const num = numRaw ? numRaw.padStart(2,'0') : '';
-    const amt = parseFloat(document.getElementById('amtInput').value);
-    
-    const isNica = sinReventado(draw.name);
-    const revRaw = !isNica ? document.getElementById('revInput').value.trim() : '';
-    const rev = revRaw ? parseFloat(revRaw) : 0;
-
-    if(!num){ alert('Ingresá un número.'); return; }
-    if(!amt || amt < 50 || amt % 50 !== 0){ alert('Mínimo ₡50 y múltiplos de 50.'); return; }
-    if(!isNica && rev > 0 && (rev < 50 || rev % 50 !== 0)){ alert('Mínimo ₡50 y múltiplos de 50 para el reventado.'); return; }
-    if(!isNica && rev > amt){ alert('El reventado no puede ser mayor que la apuesta.'); return; }
-    
-    const yaJugado = this.currentLines.filter(l=>l.num===num).reduce((s,l)=>s+l.amt+l.rev, 0);
-    if(yaJugado + amt + rev > this.maxBet){
-      alert(`Límite superado. El máximo por número es ${money(this.maxBet)}.`);
-      return;
-    }
-    const existente = this.currentLines.find(l=>l.num===num);
-    if(existente){
-      existente.amt += amt;
-      existente.rev += rev;
-    } else {
-      this.currentLines.push({num, amt, rev});
-    }
-    document.getElementById('numInput').value='';
-    if(!isNica) document.getElementById('revInput').value='';
-    this.renderLines();
-    document.getElementById('numInput').focus();
-  },
-
-  removeLine(i){ this.currentLines.splice(i,1); this.renderLines(); },
-
-  renderLines(){
-    const body = document.getElementById('linesBody');
-    body.innerHTML = '';
-    let total = 0;
-    this.currentLines.forEach((l,i)=>{
-      total += l.amt + l.rev;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="mono">${l.num}</td><td class="mono">${money(l.amt)}</td><td class="mono">${l.rev? money(l.rev):'—'}</td>
-        <td><button class="del-x" onclick="App.removeLine(${i})">✕</button></td>`;
-      body.appendChild(tr);
-    });
-    document.getElementById('linesTable').classList.toggle('hidden', this.currentLines.length===0);
-    document.getElementById('linesEmpty').classList.toggle('hidden', this.currentLines.length>0);
-    document.getElementById('ticketTotal').textContent = money(total);
-  },
-
-  async confirmSale(){
-    const btn = document.getElementById('btnConfirmSale');
-    const drawObj = DRAWS.find(d=>d.name===document.getElementById('drawSelect').value);
-    if(!drawObj || !isDrawOpen(drawObj, getCRTime())){ alert('Este sorteo ya cerró.'); return; }
-    if(this.currentLines.length===0){ alert('Agregá líneas al tiquete.'); return; }
-
-    const porNumero = {};
-    this.currentLines.forEach(l=>{ porNumero[l.num] = (porNumero[l.num]||0) + l.amt + l.rev; });
-    const excedido = Object.keys(porNumero).find(n => porNumero[n] > this.maxBet);
-    if(excedido){ alert(`El número ${excedido} supera el límite de ${money(this.maxBet)}.`); return; }
-    const buyer = document.getElementById('buyerInput').value.trim() || 'Anónimo';
-
-    btn.disabled = true;
-    try {
-      const seq = await this.getNextSeq('tiquetes');
-      const id = `TSM-AAA-${String(seq).padStart(5,'0')}`;
-      const total = this.currentLines.reduce((s,l)=>s+l.amt+l.rev, 0);
-      
-      const movId = await this.getNextSeq('movimientos');
-      const movData = {
-        id: 'M' + movId, 
-        ticketId: id,
-        date: todayStr(), 
-        crDate: crDateStr(),
-        type: 'Ingreso', 
-        category: 'Venta de Tiquetes',
-        detail: `Venta ${id} · ${drawObj.name}`,
-        amount: total, 
-        owner: this.currentRole, 
-        draw: drawObj.name, 
-        seller: this.currentProfile.name,
-        locked: false
-      };
-      
-      const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), movData);
-
-      const newTicket = {
-        id, 
-        draw: drawObj.name, 
-        date: todayStr(), 
-        crDate: crDateStr(),
-        lines: [...this.currentLines], 
-        total, 
-        buyer,
-        vendor: this.currentProfile.name,
-        owner: this.currentRole, 
-        paid: false, 
-        status: 'registrada',
-        movDocId: movRef.id
-      };
-
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'tiquetes'), newTicket);
-      
-      this.currentLines = [];
-      document.getElementById('buyerInput').value = '';
-      this.renderLines();
-      this.showReceipt(newTicket);
-      
-      alert(`Tiquete ${id} registrado. El ingreso se sumó a la caja de inmediato.`);
-      this.switchTab('reportes');
-    } catch(e) {
-      console.error("Error al confirmar venta:", e);
-      alert("Error al confirmar venta.");
-    } finally {
-      btn.disabled = false;
-    }
-  },
-
-  showReceiptById(id){
-    const t = this.tickets.find(x=>x.id===id);
-    if(!t){ alert('No se encontró el tiquete.'); return; }
-    this.showReceipt(t);
-  },
-
-  showReceipt(t){
-    const directoGroups = {};
-    t.lines.forEach(l=>{ (directoGroups[l.amt] = directoGroups[l.amt] || []).push(escapeHtml(l.num)); });
-    const directoHtml = Object.keys(directoGroups).sort((a,b)=>a-b)
-      .map(amt=>`<div class="row"><span>${directoGroups[amt].join('-')}</span><span>${money(amt)}</span></div>`).join('');
-
-    const hasReventado = t.lines.some(l => l.rev > 0);
-    const reventGroups = {};
-    t.lines.forEach(l=>{ if(l.rev>0) (reventGroups[l.rev] = reventGroups[l.rev] || []).push(escapeHtml(l.num)); });
-    const reventHtml = hasReventado ? `
-      <div class="small" style="font-weight:600; margin-top:6px;">Reventado:</div>
-      ${Object.keys(reventGroups).sort((a,b)=>a-b).map(amt=>`<div class="row"><span>${reventGroups[amt].join('-')}</span><span>${money(amt)}</span></div>`).join('')}
-    ` : '';
-
-    const nameL = t.draw.toLowerCase();
-    const footerRules = nameL.includes('nica')
-      ? `<div class="small">Sorteo Nica · Directo paga x85</div><hr>`
-      : nameL.includes('primera')
-        ? `<div class="small">La Primera · Directo paga x85</div><hr>`
-        : `<div class="small">Directo paga x85 · Reventado x200</div><hr>`;
-
-    document.getElementById('printArea').innerHTML = `
-      <div class="center big">TIEMPOS SAN MIGUEL</div>
-      <div class="center">Oficina · Tel 7250-2050</div><hr>
-      <div class="row"><span>Tiquete</span><span>${escapeHtml(t.id)}</span></div>
-      <div class="row"><span>Sorteo</span><span>${escapeHtml(t.draw)}</span></div>
-      <div class="row"><span>Fecha</span><span>${escapeHtml(t.date)}</span></div>
-      <div class="row"><span>Cliente</span><span>${escapeHtml(t.buyer || 'Anónimo')}</span></div><hr>
-      <div class="small" style="font-weight:600;">Directo:</div>
-      ${directoHtml}${reventHtml}<hr>
-      <div class="row big"><span>TOTAL</span><span>${money(t.total)}</span></div><hr>
-      ${footerRules}
-      <div class="small" style="font-weight:600;">Vence: ${formatDMY(addDaysToDateStr(t.crDate, CLAIM_DAYS))}</div><hr>
-      <div class="center">Vendedor: ${escapeHtml(t.vendor)}</div>
-    `;
-  },
-
-  canDeleteTicket(t){
-    if(this.currentRole === 'admin') return true;      // el admin siempre puede
-    if(t.owner !== this.currentRole) return false;     // solo tiquetes de su negocio
-    if(t.paid) return false;                           // nunca uno ya pagado
-    if(t.crDate !== crDateStr()) return false;         // solo tiquetes de hoy
-    const draw = DRAWS.find(d => d.name === t.draw);
-    return !!draw && isDrawOpen(draw, getCRTime());    // solo si el sorteo sigue abierto
-  },
-
-  async deleteTicket(id){
-    const t = this.tickets.find(x => x.id === id);
-    if(!t) return;
-
-    if(!this.canDeleteTicket(t)){
-      alert('Este tiquete ya no se puede eliminar porque el sorteo cerró.');
-      this.renderReports();
-      return;
-    }
-
-    // Un vendedor tampoco puede borrar si el ingreso ya entró en un cierre de caja
-    if(this.currentRole !== 'admin'){
-      const mov = this.movs.find(m => m._id === t.movDocId);
-      if(mov && mov.locked){
-        alert('Este tiquete ya está incluido en un cierre de caja y no se puede eliminar.');
-        return;
-      }
-    }
-
-    if(!confirm(`¿Eliminar el tiquete ${t.id}? Esto también borrará su ingreso asociado.`)) return;
-
-    try {
-      if(t._id) {
-        await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id));
-      }
-      if(t.movDocId) {
-        try { await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'movimientos', t.movDocId)); } catch(errMov){}
-      }
-      if(t.payMovDocId) {
-        try { await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'movimientos', t.payMovDocId)); } catch(errPay){}
-      }
-
-      this.tickets = this.tickets.filter(x => x.id !== id);
-      this.movs = this.movs.filter(m => m.ticketId !== id && (!m.detail || !m.detail.includes(id)));
-      this.renderAll();
-      alert("Tiquete eliminado con éxito.");
-    } catch(e) {
-      console.error("Error al eliminar:", e);
-      alert("Hubo un error al intentar eliminar el tiquete.");
-    }
-  },
-
-  async saveMaxBet(){
-    if(this.currentRole !== 'admin') return;
-    const val = parseFloat(document.getElementById('maxBetInput').value);
-    if(isNaN(val) || val < 50){ alert('Monto inválido.'); return; }
-    try {
-      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', 'limites'), { limiteGeneral: val }, { merge: true });
-      alert(`Límite actualizado en la Nube.`);
-    } catch(e){ alert('Error al actualizar límite.'); }
-  },
-
-  async registerExpense(){
-    const owner = this.currentRole === 'admin' ? document.getElementById('gastoOwner').value : this.currentRole;
-    if(!owner){ alert('Elegí el negocio.'); return; }
-    const categoria = document.getElementById('gastoCategoria').value;
-    const detalleRaw = document.getElementById('gastoDetalle').value.trim();
-    const monto = parseFloat(document.getElementById('gastoMonto').value);
-    if(isNaN(monto) || monto<=0){ alert('Ingresá un monto.'); return; }
-    
-    try {
-      const movId = await this.getNextSeq('movimientos');
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
-        id: 'M'+movId, date: todayStr(), crDate: crDateStr(), type: 'Gasto', 
-        detail: detalleRaw ? `${categoria} · ${detalleRaw}` : categoria, 
-        amount: -monto, owner, category: categoria, locked: false
-      });
-      document.getElementById('gastoDetalle').value = '';
-      document.getElementById('gastoMonto').value = '';
-      alert(`Gasto registrado.`);
-    } catch(e){ console.error(e); }
-  },
-
-  async saveCierre(){
-    const owner = this.currentRole === 'admin' ? document.getElementById('cierreOwner').value : this.currentRole;
-    const efectivo = parseFloat(document.getElementById('cierreEfectivo').value);
-    if(isNaN(efectivo) || efectivo<0){ alert('Ingresá el efectivo.'); return; }
-    
-    const balance = this.movs.filter(m=>m.owner===owner).reduce((s,m)=>s+m.amount, 0);
-    const diferencia = efectivo - balance;
-    
-    try {
-      const seq = await this.getNextSeq('cierres');
-      const idStr = 'C' + seq;
-      
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'cierres'), {
-        id: idStr, owner, crDate: crDateStr(), ts: new Date().toISOString(), 
-        balance, efectivo, diferencia, registradoPor: this.currentProfile.name
-      });
-
-      const toLock = this.movs.filter(m=>m.owner===owner && !m.locked);
-      for(let m of toLock) {
-        await window.fs.updateDoc(window.fs.doc(window.fs.db, 'movimientos', m._id), { locked: true, cierreId: idStr });
-      }
-
-      document.getElementById('cierreEfectivo').value = '';
-      alert('Corte de caja guardado en Firestore.');
-    } catch(e){ console.error(e); }
-  },
-
-  renderCierres(){
-    const body = document.getElementById('cierreBody');
-    if(!body) return;
-    const list = this.cierres.slice().reverse();
-    body.innerHTML = '';
-    list.forEach(c=>{
-      const tr = document.createElement('tr');
-      const diffColor = Math.round(c.diferencia)===0 ? 'var(--text-muted)' : (c.diferencia<0 ? 'var(--red)' : 'var(--green)');
-      tr.innerHTML = `<td class="mono">${escapeHtml(c.crDate)}</td><td>${escapeHtml(ownerLabel(c.owner))}</td><td class="mono">${money(c.balance)}</td><td class="mono">${money(c.efectivo)}</td><td class="mono" style="color:${diffColor}">${money(c.diferencia)}</td>`;
-      body.appendChild(tr);
-    });
-    document.getElementById('cierreTable').classList.toggle('hidden', list.length===0);
-    document.getElementById('cierreEmpty').classList.toggle('hidden', list.length>0);
-  },
-
-  findTicketForPay(){
-    const id = normalizeCode(document.getElementById('payTicketId').value);
-    const t = this.tickets.find(x=>normalizeCode(x.id)===id);
-    const box = document.getElementById('payResult');
-    if(!t){ box.className='empty-note'; box.textContent='No encontrado.'; return; }
-    box.className = 'panel'; box.style.padding='14px';
-
-    const result = this.results.find(r=>r.draw===t.draw && r.crDate===t.crDate);
-    const premio = t.premio || 0;
-    const expiry = addDaysToDateStr(t.crDate, CLAIM_DAYS);
-    const expired = crDateStr() > expiry;
-    let estado;
-    if(t.paid) estado = `Ya pagado · premio ${money(premio)}`;
-    else if(!result) estado = `Sin resultado. Vence ${formatDMY(expiry)}.`;
-    else if(!t.premiado) estado = 'No salió premiado.';
-    else if(expired) estado = `⚠ Venció el ${formatDMY(expiry)}.`;
-    else if(t.status!=='registrada') estado = `Esperando cierre para finanzas.`;
-    else estado = `Premiado · le corresponden ${money(premio)}`;
-    const puedePagar = !t.paid && t.status==='registrada' && !!result && t.premiado && !expired;
-
-    box.innerHTML = `
-            <div style="margin-bottom:10px;"><b>${escapeHtml(t.id)}</b> · ${escapeHtml(t.draw)} · Jugado: ${money(t.total)}<br><span style="color:var(--text-muted); font-size:12.5px;">Comprador: ${escapeHtml(t.buyer || 'Anónimo')}</span></div>
-      <div style="font-size:12.5px; color:${expired?'var(--red)':'var(--text-muted)'}; margin-bottom:12px;">${escapeHtml(estado)}</div>
-      ${puedePagar ? `<button class="btn-small gold" onclick="App.payTicket('${escapeHtml(t.id).replace(/'/g,"&#39;")}')">Registrar pago</button>` : ''}
-    `;
-  },
-
-  async payTicket(id){
-    const t = this.tickets.find(x=>x.id===id);
-    if(!t || t.paid || !t.premiado) return;
-    try {
-      const movId = await this.getNextSeq('movimientos');
-      const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
-        id: 'M'+movId, date: todayStr(), crDate: crDateStr(), type: 'Pago',
-        detail: `Pago a ganador ${t.id}`, amount: -(t.premio||0),
-        owner: t.owner, ticketId: t.id, draw: t.draw, locked: false
-      });
-      await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { paid: true, payMovDocId: movRef.id });
-      this.findTicketForPay();
-    } catch(e){ console.error(e); }
-  },
-
-  populateResultDrawSelect(){
-    const opts = DRAWS.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
-    ['resDraw', 'closeDraw'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = opts; });
-    ['resDate', 'closeDate'].forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = crDateStr(); });
-    this.onResDrawChange();
-  },
-
-  calcPremio(t, res){
-    let total = 0;
-    const isNica = t.draw.toLowerCase().includes('nica');
-    const multiplier = isNica ? 85 : 85;
-    const esReventadoGanador = res.numeroReventadoType === 'br';
-
-    t.lines.forEach(l=>{
-      if(l.num === res.numero) total += l.amt * multiplier;
-      if(!sinReventado(t.draw) && esReventadoGanador && l.num === res.numero && l.rev > 0) total += l.rev * 200;
-    });
-    return total;
-  },
-
-  getClosure(draw, dateStr){
-    const d = dateStr || crDateStr();
-    return this.closures.find(c => c.draw === draw.name && c.crDate === d && c.estado === 'cerrado') || null;
-  },
-
-  async closeDrawManually(){
-    if(this.currentRole !== 'admin') return;
-    const drawName = document.getElementById('closeDraw').value;
-    const crDate = document.getElementById('closeDate').value;
-    const motivo = document.getElementById('closeReason').value.trim();
-
-    if(!drawName || !crDate){ alert('Elegí el sorteo y la fecha.'); return; }
-    if(crDate < crDateStr()){ alert('La fecha no puede ser anterior a hoy.'); return; }
-    if(!motivo){ alert('Escribí el motivo del cierre.'); return; }
-
-    const afectados = this.tickets.filter(t => t.draw === drawName && t.crDate === crDate).length;
-    const aviso = afectados
-      ? `\n\nYa hay ${afectados} tiquete(s) vendido(s) para ese sorteo y fecha. No se borran automáticamente; podés eliminarlos desde Reportes.`
-      : '';
-    if(!confirm(`¿Cerrar ${drawName} el ${formatDMY(crDate)}?\nMotivo: ${motivo}${aviso}`)) return;
-
-    try {
-      const id = `cierre_${crDate}_${drawName.replace(/\s+/g,'')}`;
-      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', id), {
-        tipo: 'cierre_manual',
-        estado: 'cerrado',
-        draw: drawName,
-        crDate,
-        motivo,
-        cerradoPor: this.currentProfile.name,
-        ts: new Date().toISOString()
-      });
-      document.getElementById('closeReason').value = '';
-      alert('Sorteo cerrado. Los vendedores ya no podrán vender en él.');
-    } catch(e){
-      console.error(e);
-      alert('Error al cerrar el sorteo.');
-    }
-  },
-
-  async reopenDraw(id){
-    if(this.currentRole !== 'admin') return;
-    if(!confirm('¿Reabrir este sorteo para ventas?')) return;
-    try {
-      await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'configuracion', id));
-    } catch(e){
-      console.error(e);
-      alert('Error al reabrir el sorteo.');
-    }
-  },
-
-  renderClosures(){
-    const box = document.getElementById('closuresList');
-    if(!box) return;
-    const today = crDateStr();
-    const list = this.closures
-      .filter(c => c.crDate >= today)
-      .sort((a,b) => (a.crDate + a.draw).localeCompare(b.crDate + b.draw));
-
-    if(!list.length){
-      box.innerHTML = '<div class="empty-note">No hay cierres manuales activos</div>';
-      return;
-    }
-    box.innerHTML = list.map(c => `
-      <div style="border-bottom:1px solid var(--navy-line); padding:10px 0; display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-        <div style="font-size:12.5px; line-height:1.5;">
-          <b>${escapeHtml(c.draw)}</b> · <span class="mono">${escapeHtml(formatDMY(c.crDate))}</span><br>
-          <span style="color:var(--text-muted);">${escapeHtml(c.motivo || '')}</span>
-        </div>
-        <button class="btn-small" onclick="App.reopenDraw('${escapeHtml(c._id)}')">Reabrir</button>
-      </div>
-    `).join('');
-  },
-
-  onResDrawChange(){
-    const sel = document.getElementById('resDraw');
-    const rev = document.getElementById('resReventadoType');
-    if(!sel || !rev) return;
-    const off = sinReventado(sel.value);
-    rev.disabled = off;
-    if(off) rev.value = '';
-  },
-
-  async saveResult(){
-    if(this.currentRole !== 'admin') return;
-    const draw = document.getElementById('resDraw').value;
-    const crDate = document.getElementById('resDate').value;
-    const numeroRaw = document.getElementById('resNumero').value.trim();
-    const numeroReventadoType = document.getElementById('resReventadoType').value;
-    
-    if(!draw || !crDate || !numeroRaw){ alert('Completá sorteo, fecha y número ganador.'); return; }
-    
-    const isNica = sinReventado(draw);
-    if(!isNica && !numeroReventadoType){ alert('Debes seleccionar obligatoriamente si cayó Bola Reventada (br) o Bola Blanca (bb).'); return; }
-
-    const numero = numeroRaw.padStart(2,'0');
-    const resId = `${crDate}_${draw.replace(/\s+/g,'')}`;
-
-    try {
-      await window.fs.setDoc(window.fs.doc(window.fs.db, 'resultados', resId), { 
-        draw, 
-        crDate, 
-        numero, 
-        numeroReventadoType: isNica ? 'N/A' : numeroReventadoType 
-      });
-
-      const configId = `sorteo_estado_${crDate}_${draw.replace(/\s+/g,'')}`;
-      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', configId), {
-        draw,
-        crDate,
-        estado: 'cerrado',
-        cerradoAutomaticamente: true,
-        actualizadoEn: new Date().toISOString()
-      }, { merge: true });
-
-      const ticketsToUpdate = this.tickets.filter(t => t.draw === draw && t.crDate === crDate);
-      for (let t of ticketsToUpdate) {
-        const premio = this.calcPremio(t, { numero, numeroReventadoType });
-        const premiado = premio > 0;
-        await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { premio, premiado });
-      }
-
-      alert('¡Resultado guardado y premios recalculados correctamente!');
-      
-      document.getElementById('resNumero').value = '';
-      document.getElementById('resReventadoType').value = '';
-    } catch(e) { 
-      console.error(e); 
-      alert('Error al guardar resultado.'); 
-    }
-  },
-
-  async deleteResult(id){
-    if(this.currentRole !== 'admin') return;
-    if(!confirm('¿Eliminar resultado?')) return;
-    try {
-      const r = this.results.find(x => x._id === id);
-      await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'resultados', id));
-      
-      if(r) {
-        const ticketsToReset = this.tickets.filter(t => t.draw === r.draw && t.crDate === r.crDate);
-        for(let t of ticketsToReset){
-          await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { premio: 0, premiado: false });
-        }
-      }
-    } catch(e) { console.error(e); }
-  },
-
-  renderResults(){
-    const body = document.getElementById('resBody');
-    if(!body) return;
-    const arr = this.results.slice().sort((a,b)=>(b.crDate+b.draw).localeCompare(a.crDate+a.draw));
-    body.innerHTML = '';
-    arr.forEach(r=>{
-      const tr = document.createElement('tr');
-      const revText = r.numeroReventadoType === 'br' ? 'Bola Reventada (br)' : r.numeroReventadoType === 'bb' ? 'Bola Blanca (bb)' : (r.numeroReventadoType || '—');
-      tr.innerHTML = `
-        <td>${escapeHtml(r.draw)}</td>
-        <td class="mono">${escapeHtml(r.crDate)}</td>
-        <td class="mono" style="font-weight:bold; color:var(--gold);">${escapeHtml(r.numero)}</td>
-        <td>${escapeHtml(revText)}</td>
-        <td><button class="del-x" onclick="App.deleteResult('${escapeHtml(r._id)}')">✕</button></td>
-      `;
-      body.appendChild(tr);
-    });
-    document.getElementById('resTable').classList.toggle('hidden', arr.length===0);
-    document.getElementById('resEmpty').classList.toggle('hidden', arr.length>0);
-    this.renderNumeros();
-  },
-
-  populateNumerosDrawSelect(){
-    const sel = document.getElementById('numDraw');
-    if(sel) sel.innerHTML = '<option value="">Todos</option>' + DRAWS.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
-  },
-
-  clearNumerosFilters(){
-    document.getElementById('numDateFrom').value = '';
-    document.getElementById('numDateTo').value = '';
-    document.getElementById('numDraw').value = '';
-    this.renderNumeros();
-  },
-
-  renderNumeros(){
-    const body = document.getElementById('numBody');
-    if(!body) return;
-    const from = document.getElementById('numDateFrom').value;
-    const to = document.getElementById('numDateTo').value;
-    const draw = document.getElementById('numDraw').value;
-
-    const closeMin = name => { const d = DRAWS.find(x => x.name === name); return d ? d.closeH*60 + d.closeM : 0; };
-
-    const list = this.results.filter(r => {
-      if(from && r.crDate < from) return false;
-      if(to && r.crDate > to) return false;
-      if(draw && r.draw !== draw) return false;
-      return true;
-    }).sort((a,b) => b.crDate.localeCompare(a.crDate) || closeMin(b.draw) - closeMin(a.draw))
-      .slice(0, 100);
-
-    body.innerHTML = '';
-    list.forEach(r => {
-      const rev = r.numeroReventadoType === 'br' ? 'Bola Reventada (br)'
-                : r.numeroReventadoType === 'bb' ? 'Bola Blanca (bb)' : '—';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="mono">${escapeHtml(formatDMY(r.crDate))}</td>
-        <td>${escapeHtml(r.draw)}</td>
-        <td class="mono" style="font-weight:bold; font-size:16px; color:var(--gold);">${escapeHtml(r.numero)}</td>
-        <td>${escapeHtml(rev)}</td>
-      `;
-      body.appendChild(tr);
-    });
-    document.getElementById('numTable').classList.toggle('hidden', list.length === 0);
-    const empty = document.getElementById('numEmpty');
-    empty.classList.toggle('hidden', list.length > 0);
-    empty.textContent = this.results.length === 0
-      ? 'Todavía no hay resultados registrados'
-      : 'No hay resultados con esos filtros';
-  },
-
-  populateReportDrawSelect(){
-    const sel = document.getElementById('repDraw');
-    if(sel) sel.innerHTML = '<option value="">Todos</option>' + DRAWS.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
-  },
-
-  clearMovFilters(){
-    document.getElementById('movDateFrom').value = '';
-    document.getElementById('movDateTo').value = '';
-    document.getElementById('movType').value = '';
-    const own = document.getElementById('movOwner');
-    if(own) own.value = '';
-    this.renderAll();
-  },
-
-  clearReportFilters(){
-    document.getElementById('repSearch').value = '';
-    document.getElementById('repDateFrom').value = '';
-    document.getElementById('repDateTo').value = '';
-    document.getElementById('repDraw').value = '';
-    document.getElementById('repPremio').value = '';
-    this.renderAll();
-  },
-
-  async createUserAccount(){
-    if(this.currentRole !== 'admin') return;
-    const email = document.getElementById('newUsrEmail').value.trim();
-    const pass = document.getElementById('newUsrPass').value;
-    const name = document.getElementById('newUsrName').value.trim();
-    const role = document.getElementById('newUsrRole').value;
-    
-    if(!email || !pass || !name){ alert('Completá todos los campos.'); return; }
-    if(pass.length < 6){ alert('La contraseña debe tener al menos 6 caracteres.'); return; }
-
-    try {
-      await window.createNewUserAccount(email, pass, name, role);
-      alert(`Usuario ${name} creado con éxito.`);
-      document.getElementById('newUsrEmail').value = '';
-      document.getElementById('newUsrPass').value = '';
-      document.getElementById('newUsrName').value = '';
-    } catch(e){
-      console.error(e);
-      alert('Error al crear usuario: ' + e.message);
-    }
-  },
-
-  renderAll(){
-    this.renderFinances();
-    this.renderReports();
-    this.renderDashboardSummary();
-  },
-
-  renderDashboardSummary(){
-    const today = crDateStr();
-    const todayMovs = this.movs.filter(m => (m.crDate === today || m.date === todayStr()) && m.type === 'Ingreso');
-    const sold = todayMovs.reduce((s,m)=>s+m.amount, 0);
-    const soldEl = document.getElementById('soldToday');
-    if(soldEl) soldEl.textContent = money(sold);
-
-    const todayTiq = this.tickets.filter(t => t.crDate === today || t.date === todayStr());
-    const tiqEl = document.getElementById('ticketsToday');
-    if(tiqEl) tiqEl.textContent = todayTiq.length;
-  },
-
-  renderFinances(){
-    const dateFrom = document.getElementById('movDateFrom').value;
-    const dateTo = document.getElementById('movDateTo').value;
-    const type = document.getElementById('movType').value;
-    const owner = document.getElementById('movOwner') ? document.getElementById('movOwner').value : '';
-
-    let list = this.movs.filter(m=>{
-      const mDate = movDateKey(m);
-      if(dateFrom && mDate && mDate < dateFrom) return false;
-      if(dateTo && mDate && mDate > dateTo) return false;
-      if(type && m.type !== type) return false;
-      if(owner && m.owner !== owner) return false;
-      return true;
-    }).sort((a,b)=>(b.crDate||b.date||'').localeCompare(a.crDate||a.date||''));
-
-    const body = document.getElementById('movBody');
-    if(body){
-      body.innerHTML = '';
-      list.forEach(m=>{
-        const tr = document.createElement('tr');
-        const color = m.amount > 0 ? 'var(--green)' : 'var(--red)';
-        const canDelete = this.currentRole === 'admin' && !m.locked;
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(m.crDate || m.date)}</td>
-          <td>${escapeHtml(m.type)}</td>
-          <td>${escapeHtml(m.seller || ownerLabel(m.owner))}</td>
-          <td>${escapeHtml(m.detail)}</td>
-          <td class="mono" style="color:${color}">${money(m.amount)}</td>
-          <td>${canDelete ? `<button class="del-x" onclick="App.deleteMov('${escapeHtml(m._id)}')">✕</button>` : '—'}</td>
-        `;
-        body.appendChild(tr);
-      });
-      document.getElementById('movTable').classList.toggle('hidden', list.length===0);
-      document.getElementById('movEmpty').classList.toggle('hidden', list.length>0);
-    }
-
-    const filteredMovs = (owner) ? this.movs.filter(m=>m.owner===owner) : this.movs;
-    const totalIn = filteredMovs.filter(m=>m.amount>0).reduce((s,m)=>s+m.amount, 0);
-    const totalOut = filteredMovs.filter(m=>m.amount<0).reduce((s,m)=>s+Math.abs(m.amount), 0);
-    const balance = totalIn - totalOut;
-
-    const bFull = document.getElementById('balanceFull');
-    if(bFull) bFull.textContent = money(balance);
-    const tIn = document.getElementById('totalIn');
-    if(tIn) tIn.textContent = money(totalIn);
-    const tOut = document.getElementById('totalOut');
-    if(tOut) tOut.textContent = money(totalOut);
-
-    const bTop = document.getElementById('balanceTop');
-    if(bTop) bTop.textContent = money(balance);
-
-    if(this.currentRole === 'admin'){
-      const libBal = this.movs.filter(m=>m.owner==='libreria').reduce((s,m)=>s+m.amount, 0);
-      const supBal = this.movs.filter(m=>m.owner==='supermercado').reduce((s,m)=>s+m.amount, 0);
-      const bLib = document.getElementById('balLibreria');
-      if(bLib) bLib.textContent = money(libBal);
-      const bSup = document.getElementById('balSuper');
-      if(bSup) bSup.textContent = money(supBal);
-    }
-
-    this.renderDrawSummary(filteredMovs);
-    this.renderDaySummary(filteredMovs);
-  },
-
-  async deleteMov(id){
-    if(this.currentRole !== 'admin') return;
-    const m = this.movs.find(x => x._id === id);
-    if(!m || m.locked){ alert('Este movimiento está bloqueado por un cierre de caja.'); return; }
-    if(!confirm('¿Eliminar este movimiento?')) return;
-    try {
-      await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'movimientos', id));
-    } catch(e){ console.error(e); }
-  },
-
-  renderDrawSummary(movs){
-    const body = document.getElementById('drawSummaryBody');
-    if(!body) return;
-    const summary = {};
-    movs.forEach(m=>{
-      if(!m.draw) return;
-      if(!summary[m.draw]) summary[m.draw] = { sold:0, paid:0 };
-      if(m.type === 'Ingreso') summary[m.draw].sold += m.amount;
-      if(m.type === 'Pago') summary[m.draw].paid += Math.abs(m.amount);
-    });
-    const keys = Object.keys(summary);
-    body.innerHTML = '';
-    keys.forEach(draw=>{
-      const item = summary[draw];
-      const margin = item.sold - item.paid;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHtml(draw)}</td><td class="mono">${money(item.sold)}</td><td class="mono">${money(item.paid)}</td><td class="mono" style="color:${margin>=0?'var(--green)':'var(--red)'}">${money(margin)}</td>`;
-      body.appendChild(tr);
-    });
-    document.getElementById('drawSummaryTable').classList.toggle('hidden', keys.length===0);
-    document.getElementById('drawSummaryEmpty').classList.toggle('hidden', keys.length>0);
-  },
-
-  renderDaySummary(movs){
-    const body = document.getElementById('daySummaryBody');
-    if(!body) return;
-    const summary = {};
-    movs.forEach(m=>{
-      const d = m.crDate || m.date || 'Sin fecha';
-      if(!summary[d]) summary[d] = { sold:0, prizes:0, expenses:0 };
-      if(m.type === 'Ingreso') summary[d].sold += m.amount;
-      if(m.type === 'Pago') summary[d].prizes += Math.abs(m.amount);
-      if(m.type === 'Gasto') summary[d].expenses += Math.abs(m.amount);
-    });
-    const days = Object.keys(summary).sort().reverse();
-    body.innerHTML = '';
-    days.forEach(d=>{
-      const item = summary[d];
-      const net = item.sold - item.prizes - item.expenses;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="mono">${escapeHtml(d)}</td><td class="mono">${money(item.sold)}</td><td class="mono">${money(item.prizes)}</td><td class="mono">${money(item.expenses)}</td><td class="mono" style="color:${net>=0?'var(--green)':'var(--red)'}">${money(net)}</td>`;
-      body.appendChild(tr);
-    });
-    document.getElementById('daySummaryTable').classList.toggle('hidden', days.length===0);
-    document.getElementById('daySummaryEmpty').classList.toggle('hidden', days.length>0);
-  },
-
-  renderReports(){
-    const search = normalizeCode(document.getElementById('repSearch').value);
-    const dateFrom = document.getElementById('repDateFrom').value;
-    const dateTo = document.getElementById('repDateTo').value;
-    const draw = document.getElementById('repDraw').value;
-    const premioFilter = document.getElementById('repPremio').value;
-
-    let list = this.tickets.filter(t=>{
-      if(search && !normalizeCode(t.id).includes(search)) return false;
-      if(dateFrom && t.crDate && t.crDate < dateFrom) return false;
-      if(dateTo && t.crDate && t.crDate > dateTo) return false;
-      if(draw && t.draw !== draw) return false;
-
-      const hasRes = !!this.results.find(r=>r.draw===t.draw && r.crDate===t.crDate);
-      if(premioFilter === 'premiado' && (!hasRes || !t.premiado)) return false;
-      if(premioFilter === 'no_premiado' && (!hasRes || t.premiado)) return false;
-      if(premioFilter === 'sin_resultado' && hasRes) return false;
-      return true;
-    }).sort((a,b)=>b.id.localeCompare(a.id));
-
-    const body = document.getElementById('repBody');
-    if(!body) return;
-    body.innerHTML = '';
-    list.forEach(t=>{
-      const hasRes = !!this.results.find(r=>r.draw===t.draw && r.crDate===t.crDate);
-      let estadoTxt = 'Pendiente resultado';
-      if(hasRes){
-        if(t.paid) estadoTxt = 'Pagado';
-        else if(t.premiado) estadoTxt = `Premiado (${money(t.premio)})`;
-        else estadoTxt = 'No premiado';
-      }
-
-      const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.onclick = ()=>App.showReceiptById(t.id);
-      tr.innerHTML = `
-        <td class="mono" style="font-weight:600; color:var(--gold);">${escapeHtml(t.id)}</td>
-        <td>${escapeHtml(t.draw)}</td>
-        <td>${escapeHtml(t.vendor || ownerLabel(t.owner))}</td>
-        <td>${escapeHtml(t.buyer || 'Anónimo')}</td>
-        <td class="mono">${money(t.total)}</td>
-        <td class="mono">${t.premiado ? money(t.premio) : '—'}</td>
-        <td>${escapeHtml(estadoTxt)}</td>
-        <td>${this.canDeleteTicket(t) ? `<button class="del-x" onclick="event.stopPropagation(); App.deleteTicket('${escapeHtml(t.id)}')">✕</button>` : '—'}</td>
-      `;
-      body.appendChild(tr);
-    });
-    document.getElementById('repTable').classList.toggle('hidden', list.length===0);
-    document.getElementById('repEmpty').classList.toggle('hidden', list.length>0);
-  }
-};
-
-window.addEventListener('DOMContentLoaded', ()=>App.init());
-</script>
+<script src="js/utils.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/modules/sorteos.js"></script>
+<script src="js/modules/ventas.js"></script>
+<script src="js/modules/resultados.js"></script>
+<script src="js/modules/pagos.js"></script>
+<script src="js/modules/finanzas.js"></script>
+<script src="js/modules/reportes.js"></script>
+<script src="js/modules/usuarios.js"></script>
 </body>
 </html>
