@@ -54,7 +54,13 @@ workflow desde Actions. El ingreso manual de resultados permanece disponible.
 - No procesa días anteriores ni recalcula resultados ya existentes. No repara
   inconsistencias preexistentes de la aplicación. Las correcciones posteriores
   y tiquetes sincronizados tarde requieren revisión del administrador.
-- Sin resultados válidos de hoy se informa un error; no se usan datos antiguos.
+- Una ejecución programada que llega fuera de 10:00–22:00 Costa Rica termina
+  sin consultar el origen ni Firebase. La ejecución manual conserva su horario libre.
+- Sin resultados elegibles se informa `PENDIENTE` y se termina sin escrituras;
+  no se usan datos antiguos. Una página sin tarjetas solo se acepta como vacía
+  si conserva el encabezado de resultados y el selector con la fecha de hoy.
+  Respuestas desconocidas siguen produciendo un error.
+- Se registra la fecha y hora reales de inicio para diagnosticar retrasos del programador.
 
 ## Desarrollo local
 
