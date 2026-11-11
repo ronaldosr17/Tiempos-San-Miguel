@@ -30,6 +30,11 @@ jobs:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       APPLY_RESULTS: ${{ github.event_name == 'schedule' || inputs.aplicar }}
     steps:
+      - name: Diagnóstico de inicio
+        run: |
+          echo "evento=${{ github.event_name }}"
+          echo "cron=${{ github.event.schedule }}"
+          date -u
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
