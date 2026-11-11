@@ -1,0 +1,56 @@
+name: Resultados automáticos
+
+on:
+  workflow_dispatch:
+    inputs:
+      aplicar:
+        description: 'Guardar resultados y premios en Firebase (false = solo comprobar)'
+        type: boolean
+        default: false
+  schedule:
+    # 10:07–21:57 Costa Rica; GitHub puede retrasar las ejecuciones.
+    - cron: '7,17,27,37,47,57 16-23,0-3 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: importar-resultados
+  cancel-in-progress: false
+
+jobs:
+  importar:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.RESULTS_AUTOMATION_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      APPLY_RESULTS: ${{ github.event_name == 'schedule' || inputs.aplicar }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - name: Instalar dependencias
+        run: pip install -r scripts/requirements.txt
+      - name: Pruebas del importador
+        run: python -m unittest discover -s tests -v
+      - name: Autenticar con Google sin claves privadas
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Consultar e importar resultados
+        shell: bash
+        run: |
+          if [ "$APPLY_RESULTS" = "true" ]; then
+            python scripts/import_results.py --apply
+          else
+            python scripts/import_results.py
+          fi
