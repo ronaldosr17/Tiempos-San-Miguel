@@ -138,3 +138,49 @@ class TransactionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_import(db)
         db.transaction.return_value.create.assert_not_called()
+
+
+class PendingResultsTests(unittest.TestCase):
+    def test_recognizable_empty_page_is_pending(self):
+        html = '<div class="results-filter"><h1>Resultados de loterias</h1><input id="datepicker" type="date" value="2026-11-10"></div>'
+        results, notes = parse_results(html, ResultsTests.now)
+        self.assertEqual(results, [])
+        self.assertIn('todavía sin resultados', notes[0])
+
+    def test_empty_page_wrong_date_is_error(self):
+        html = '<div class="results-filter"><h1>Resultados de loterias</h1><input id="datepicker" type="date" value="2026-11-09"></div>'
+        with self.assertRaises(ValueError):
+            parse_results(html, ResultsTests.now)
+
+    def test_unknown_page_still_errors(self):
+        for html in ('<h1>Access denied</h1>', '<input id="datepicker" type="date" value="2026-11-10">'):
+            with self.assertRaises(ValueError):
+                parse_results(html, ResultsTests.now)
+
+    def test_schedule_window(self):
+        from import_results import scheduled_outside_window
+        for hour, expected in [(5, True), (9, True), (10, False), (21, False), (22, True)]:
+            now = ResultsTests.now.replace(hour=hour)
+            self.assertEqual(scheduled_outside_window(now, 'schedule'), expected)
+            self.assertFalse(scheduled_outside_window(now, 'workflow_dispatch'))
+
+    def test_scheduled_early_execution_does_not_fetch_or_connect(self):
+        from unittest.mock import patch
+        import import_results as module
+        with patch.object(module.sys, 'argv', ['import_results.py', '--apply']), patch.object(module, 'datetime') as dt, patch.dict(module.os.environ, {'GITHUB_EVENT_NAME': 'schedule'}), patch.object(module, 'urlopen') as fetch, patch('google.cloud.firestore.Client') as client:
+            dt.now.return_value = ResultsTests.now.replace(hour=5)
+            module.main()
+            fetch.assert_not_called()
+            client.assert_not_called()
+
+    def test_pending_results_do_not_connect_to_firebase(self):
+        from unittest.mock import patch, MagicMock
+        import import_results as module
+        response = MagicMock()
+        response.headers = {'Content-Type': 'text/html'}
+        response.read.return_value = card(date='2026-11-09').encode()
+        with patch.object(module.sys, 'argv', ['import_results.py', '--apply']), patch.dict(module.os.environ, {'GITHUB_EVENT_NAME': 'schedule'}), patch.object(module, 'datetime') as dt, patch.object(module, 'urlopen') as fetch, patch('google.cloud.firestore.Client') as client:
+            dt.now.return_value = ResultsTests.now
+            fetch.return_value.__enter__.return_value = response
+            module.main()
+            client.assert_not_called()

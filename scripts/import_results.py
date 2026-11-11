@@ -36,7 +36,14 @@ def parse_results(html, now):
     soup = BeautifulSoup(html, 'html.parser')
     cards = soup.select('.result-card')
     if not cards:
-        raise ValueError('No se encontraron tarjetas: revisar estructura del sitio.')
+        # Una página de resultados reconocible puede estar vacía al iniciar el día.
+        # No confundirla con páginas de bloqueo, acceso o una estructura desconocida.
+        heading = soup.select_one('.results-filter h1')
+        date_input = soup.select_one('.results-filter input#datepicker[type="date"]')
+        if (heading and normalize(heading.get_text()) == 'RESULTADOS DE LOTERIAS'
+                and date_input and date_input.get('value') == now.date().isoformat()):
+            return [], ['Página válida de hoy, todavía sin resultados publicados']
+        raise ValueError('No se encontraron tarjetas ni una página vacía válida; revisar respuesta del sitio.')
     results, notes, seen = [], [], set()
     for card in cards:
         title = card.select_one('.card-header span')
@@ -147,6 +154,10 @@ def import_one(db, result, apply):
     return save(db.transaction())
 
 
+def scheduled_outside_window(now, event):
+    return event == 'schedule' and not (10 <= now.hour < 22)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true')
@@ -155,6 +166,11 @@ def main():
     if args.html and args.apply:
         parser.error('--html no puede combinarse con --apply')
     now = datetime.now(TZ)
+    print('MODO:', 'APLICAR' if args.apply else 'SIMULACIÓN (sin escrituras)')
+    print('Fecha/hora Costa Rica:', now.isoformat())
+    if scheduled_outside_window(now, os.environ.get('GITHUB_EVENT_NAME')):
+        print('OMITIDO: ejecución programada fuera de 10:00–22:00 Costa Rica; sin consultas ni escrituras.')
+        return
     if args.html:
         html = args.html.read_text(encoding='utf-8')
     else:
@@ -166,12 +182,11 @@ def main():
             if len(html) > 2_000_000:
                 raise ValueError('Respuesta demasiado grande')
     results, notes = parse_results(html, now)
-    print('MODO:', 'APLICAR' if args.apply else 'SIMULACIÓN (sin escrituras)')
-    print('Fecha Costa Rica:', now.date().isoformat())
     for note in notes:
         print('AVISO:', note)
     if not results:
-        raise ValueError('Sin resultados válidos de hoy; no se escribió nada. Revisar fecha/disponibilidad del origen.')
+        print('PENDIENTE: ningún resultado elegible de hoy; sin escrituras. Se revisará en la próxima ejecución.')
+        return
     db = None
     if not args.html:
         from google.cloud import firestore
