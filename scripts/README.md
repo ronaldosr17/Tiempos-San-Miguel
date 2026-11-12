@@ -38,7 +38,7 @@ workflow desde Actions. El ingreso manual de resultados permanece disponible.
 
 ## Comportamiento y límites
 
-- Solo importa la fecha actual en Costa Rica después del cierre + dos minutos.
+- Importa resultados válidos de la fecha actual en Costa Rica en cuanto se detectan publicados. Si aún no llegó el cierre, agrega un cierre anticipado; a la hora de cierre o después no crea otro cierre.
 - Coincidencia exacta de nombres normalizando espacios; excluye Tripleta y Monazo.
 - Conserva dos dígitos y exige BB/BR en Tica. Nica y La Primera usan `N/A`.
 - Nica 6 PM solo fines de semana, como indica el catálogo de la aplicación.
@@ -46,8 +46,9 @@ workflow desde Actions. El ingreso manual de resultados permanece disponible.
   una tarjeta exacta `NICA 9 PM`; mientras tanto debe ingresarse manualmente.
 - No inventa resultados ausentes ni reemplaza resultados existentes. Los resultados
   existentes iguales se omiten; los distintos hacen fallar la ejecución y se reportan.
-- Cada sorteo nuevo se confirma en una transacción: resultado + cierre que la app
-  reconoce + premios de todos sus tiquetes. No crea movimientos ni paga premios.
+- Cada sorteo nuevo confirma resultado y premios en una transacción. Solo si se
+  detecta antes de la hora de cierre incluye el cierre anticipado. No crea movimientos
+  ni paga premios.
 - Hasta 400 tiquetes por sorteo. Un volumen mayor o tiquetes inválidos, pagados o
   sin estado `registrada` bloquean ese sorteo sin escrituras. Otros sorteos pueden
   haberse confirmado; el registro muestra cuáles. Revisar manualmente estos casos.

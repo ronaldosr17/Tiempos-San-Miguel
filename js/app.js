@@ -246,6 +246,7 @@ const App = {
     this.refreshDrawStatus();
     this.processClosedDraws(now);
     this.renderNumberBlocks();
+    this.renderClosures();
   },
 
   onlyDigits(el){

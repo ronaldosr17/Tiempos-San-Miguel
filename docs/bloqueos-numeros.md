@@ -64,4 +64,4 @@ del despliegue; el cliente anterior no reconoce las nuevas claves.
 
 La Primera (6:00 PM) conserva su nombre e identificadores para el historial,
 los tiquetes y el origen de scraping, pero cierra ventas a las 17:00 Costa Rica.
-El importador permite ese resultado a partir de las 17:02 cuando esté publicado.
+El importador acepta ese resultado cuando esté publicado: si lo detecta antes de las 17:00, cierra anticipadamente; a esa hora o después no crea otro cierre.
