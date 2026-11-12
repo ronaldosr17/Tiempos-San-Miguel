@@ -62,10 +62,7 @@ def parse_results(html, now):
         if weekend and now.weekday() < 5:
             notes.append(f'{source_name}: solo fines de semana según catálogo; omitido')
             continue
-        # Margen de dos minutos: nunca importar antes del cierre de ventas.
-        if now.hour * 60 + now.minute < hour * 60 + minute + 2:
-            notes.append(f'{source_name}: todavía no pasó el cierre; omitido')
-            continue
+        # Un resultado válido publicado antes del horario también debe detener ventas.
         if source_name in seen:
             raise ValueError(f'Tarjeta duplicada: {source_name}')
         seen.add(source_name)
@@ -112,6 +109,13 @@ def existing_status(existing, result):
     return 'ya existe; sin cambios'
 
 
+def should_close_early(result, now=None):
+    now = (now or datetime.now(TZ)).astimezone(TZ)
+    draw = next((draw for draw in DRAWS.values() if draw[0] == result['draw']), None)
+    return bool(draw and result['crDate'] == now.date().isoformat()
+                and now.hour * 60 + now.minute < draw[1] * 60 + draw[2])
+
+
 def import_one(db, result, apply):
     from google.cloud import firestore
     from google.cloud.firestore_v1.base_query import FieldFilter
@@ -138,15 +142,16 @@ def import_one(db, result, apply):
                 raise ValueError('Tiquete pagado o no registrado sin resultado: revisar manualmente')
             amount = prize(data, result)
             updates.append((ticket.reference, {'premio': amount, 'premiado': amount > 0}))
-        # Resultado, cierre reconocido por la app y premios se confirman juntos.
+        # Solo un resultado recibido antes de la hora exige un cierre anticipado.
         transaction.create(ref, {**result, 'origen': SOURCE, 'registradoPor': 'github-actions', 'importadoEn': firestore.SERVER_TIMESTAMP})
-        closure = db.collection('configuracion').document('auto_' + result_id(result))
-        transaction.set(closure, {
-            'tipo': 'cierre_manual', 'estado': 'cerrado', 'draw': result['draw'],
-            'crDate': result['crDate'], 'motivo': 'Resultado publicado e importado automáticamente',
-            'cerradoPor': 'github-actions', 'cerradoAutomaticamente': True,
-            'ts': firestore.SERVER_TIMESTAMP,
-        })
+        if should_close_early(result):
+            closure = db.collection('configuracion').document('auto_' + result_id(result))
+            transaction.set(closure, {
+                'tipo': 'cierre_manual', 'estado': 'cerrado', 'draw': result['draw'],
+                'crDate': result['crDate'], 'motivo': 'Resultado publicado antes de la hora de cierre',
+                'cerradoPor': 'github-actions', 'cerradoAutomaticamente': True,
+                'ts': firestore.SERVER_TIMESTAMP,
+            })
         for ticket_ref, changes in updates:
             transaction.update(ticket_ref, changes)
         return f'importado; {len(updates)} tiquetes calculados'

@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from import_results import TZ, existing_status, parse_results, prize, result_id
+from import_results import TZ, existing_status, parse_results, prize, result_id, should_close_early
 
 
 def card(name='TICA DIA REVENTADOS', number='05', ball='BR', date='2026-11-10'):
@@ -28,9 +28,9 @@ class ResultsTests(unittest.TestCase):
     def test_future_date_not_imported(self):
         self.assertEqual(self.parse(card(date='2026-11-11')), [])
 
-    def test_no_import_before_close_and_margin(self):
-        now = datetime(2026, 11, 10, 12, 56, tzinfo=TZ)
-        self.assertEqual(parse_results(card(), now)[0], [])
+    def test_published_result_can_be_detected_before_close(self):
+        now = datetime(2026, 11, 10, 12, 54, tzinfo=TZ)
+        self.assertEqual(parse_results(card(), now)[0][0]['numero'], '05')
 
     def test_missing_and_invalid_ball_rejected(self):
         for ball in (None, 'XX'):
@@ -94,11 +94,12 @@ class TransactionTests(unittest.TestCase):
         collection.where.return_value.where.return_value.limit.return_value.stream.return_value = tickets
         return db
 
-    def run_import(self, db, apply=True):
+    def run_import(self, db, apply=True, now=None):
         from unittest.mock import patch
         from import_results import import_one
         result = parse_results(card(), ResultsTests.now)[0][0]
-        with patch('google.cloud.firestore.transactional', lambda f: f):
+        with patch('google.cloud.firestore.transactional', lambda f: f), patch('import_results.datetime') as clock:
+            clock.now.return_value = now or ResultsTests.now
             return import_one(db, result, apply)
 
     def test_dry_run_never_writes(self):
@@ -113,7 +114,7 @@ class TransactionTests(unittest.TestCase):
         db.transaction.return_value.create.assert_not_called()
         db.transaction.return_value.update.assert_not_called()
 
-    def test_creates_result_closure_and_award_in_same_transaction(self):
+    def test_after_close_creates_result_and_award_without_extra_closure(self):
         from unittest.mock import MagicMock
         ticket = MagicMock()
         ticket.to_dict.return_value = {'paid': False, 'status': 'registrada', 'lines': [{'num': '05', 'amt': 100, 'rev': 50}]}
@@ -121,7 +122,7 @@ class TransactionTests(unittest.TestCase):
         self.run_import(db)
         tx = db.transaction.return_value
         self.assertEqual(tx.create.call_count, 1)
-        self.assertEqual(tx.set.call_count, 1)
+        self.assertEqual(tx.set.call_count, 0)
         tx.update.assert_called_once_with(ticket.reference, {'premio': 18500, 'premiado': True})
 
     def test_paid_ticket_aborts_before_writes(self):
@@ -186,11 +187,37 @@ class PendingResultsTests(unittest.TestCase):
             client.assert_not_called()
 
 
-class PrimeraClosingTests(unittest.TestCase):
-    def test_afternoon_primera_imports_after_17_not_18(self):
-        html = card(name='LA PRIMERA 6 PM', ball=None)
-        before = datetime(2026, 11, 10, 17, 1, tzinfo=TZ)
-        after = before.replace(minute=2)
-        self.assertEqual(parse_results(html, before)[0], [])
-        result = parse_results(html, after)[0][0]
+class EarlyClosureTests(unittest.TestCase):
+    def test_tica_boundary(self):
+        result = parse_results(card(), ResultsTests.now)[0][0]
+        for h, m, expected in [(12, 54, True), (12, 55, False), (12, 56, False), (20, 0, False)]:
+            with self.subTest(hour=h, minute=m):
+                self.assertEqual(should_close_early(result, ResultsTests.now.replace(hour=h, minute=m)), expected)
+
+    def test_other_dates_do_not_close_today(self):
+        result = parse_results(card(), ResultsTests.now)[0][0]
+        now = ResultsTests.now.replace(hour=8)
+        for date in ['2026-11-09', '2026-11-11']:
+            self.assertFalse(should_close_early({**result, 'crDate': date}, now))
+
+    def test_primera_keeps_name_and_uses_17_hour_close(self):
+        before = datetime(2026, 11, 10, 16, 59, tzinfo=TZ)
+        result = parse_results(card(name='LA PRIMERA 6 PM', ball=None), before)[0][0]
         self.assertEqual(result['draw'], 'La Primera (6:00 PM)')
+        self.assertTrue(should_close_early(result, before))
+        self.assertFalse(should_close_early(result, before.replace(hour=17, minute=0)))
+
+    def test_early_result_creates_closure_in_same_transaction(self):
+        tests = TransactionTests()
+        db = tests.fake_db()
+        tests.run_import(db, now=ResultsTests.now.replace(hour=12, minute=54))
+        tx = db.transaction.return_value
+        self.assertEqual(tx.create.call_count, 1)
+        self.assertEqual(tx.set.call_count, 1)
+        self.assertTrue(tx.set.call_args.args[1]['cerradoAutomaticamente'])
+
+    def test_at_exact_close_does_not_write_closure(self):
+        tests = TransactionTests()
+        db = tests.fake_db()
+        tests.run_import(db, now=ResultsTests.now.replace(hour=12, minute=55))
+        db.transaction.return_value.set.assert_not_called()

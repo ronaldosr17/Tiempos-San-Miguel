@@ -58,14 +58,15 @@ Object.assign(App, {
         numeroReventadoType: isNica ? 'N/A' : numeroReventadoType 
       });
 
-      const configId = `sorteo_estado_${crDate}_${draw.replace(/\s+/g,'')}`;
-      await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', configId), {
-        draw,
-        crDate,
-        estado: 'cerrado',
-        cerradoAutomaticamente: true,
-        actualizadoEn: new Date().toISOString()
-      }, { merge: true });
+      if(this.resultNeedsEarlyClosure(draw, crDate)){
+        const configId = `auto_${resId}`;
+        await window.fs.setDoc(window.fs.doc(window.fs.db, 'configuracion', configId), {
+          tipo: 'cierre_manual', draw, crDate, estado: 'cerrado',
+          motivo: 'Resultado publicado antes de la hora de cierre',
+          cerradoAutomaticamente: true, cerradoPor: this.currentProfile.name,
+          ts: new Date().toISOString()
+        });
+      }
 
       const ticketsToUpdate = this.tickets.filter(t => t.draw === draw && t.crDate === crDate);
       for (let t of ticketsToUpdate) {
@@ -96,6 +97,11 @@ Object.assign(App, {
         for(let t of ticketsToReset){
           await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { premio: 0, premiado: false });
         }
+      }
+      const automaticRef = window.fs.doc(window.fs.db, 'configuracion', `auto_${id}`);
+      const automatic = await window.fs.getDoc(automaticRef);
+      if(automatic.exists() && automatic.data().cerradoAutomaticamente === true){
+        await window.fs.deleteDoc(automaticRef);
       }
     } catch(e) { console.error(e); }
   },

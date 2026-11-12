@@ -1,7 +1,8 @@
 // Sorteos: selector, estado abierto/cerrado, cierre automático y manual
 
 function isDrawOpen(draw, now){
-  if(App.getClosure(draw)) return false;   // cerrado manualmente por el admin
+  if(App.getClosure(draw, undefined, now)) return false;   // cerrado manualmente por el admin
+  if(App.results.some(r=>r.draw===draw.name && r.crDate===crDateStr())) return false;
   return (now.h*60+now.m) < (draw.closeH*60+draw.closeM);
 }
 
@@ -83,6 +84,9 @@ Object.assign(App, {
     if(open){
       banner.className = 'status-banner open';
       banner.textContent = `Sorteo abierto · cierra a las ${fmtClose(draw)} hora Costa Rica.`;
+    } else if(draw && this.results.some(r=>r.draw===draw.name && r.crDate===crDateStr())){
+      banner.className = 'status-banner closed';
+      banner.textContent = 'Resultado publicado. No se aceptan más ventas para este sorteo.';
     } else if(closure){
       banner.className = 'status-banner closed';
       banner.textContent = `Sorteo cerrado por la administración. Motivo: ${closure.motivo}`;
@@ -131,9 +135,22 @@ Object.assign(App, {
     }
   },
 
-  getClosure(draw, dateStr){
-    const d = dateStr || crDateStr();
-    return this.closures.find(c => c.draw === draw.name && c.crDate === d && c.estado === 'cerrado') || null;
+  resultNeedsEarlyClosure(drawName, dateStr, now = getCRTime()){
+    const draw = DRAWS.find(d=>d.name===drawName);
+    return !!draw && dateStr===crDateStr() && now.h*60+now.m < draw.closeH*60+draw.closeM;
+  },
+
+  closureIsActive(c, dateStr = crDateStr(), now = getCRTime()){
+    if(c.crDate!==dateStr || c.estado!=='cerrado') return false;
+    if(c.cerradoAutomaticamente===true){
+      return this.resultNeedsEarlyClosure(c.draw, c.crDate, now);
+    }
+    return true;
+  },
+
+  getClosure(draw, dateStr, now = getCRTime()){
+    const date = dateStr || crDateStr();
+    return this.closures.find(c => c.draw===draw.name && this.closureIsActive(c, date, now)) || null;
   },
 
   async closeDrawManually(){
@@ -173,6 +190,8 @@ Object.assign(App, {
 
   async reopenDraw(id){
     if(this.currentRole !== 'admin') return;
+    const closure=this.closures.find(c=>c._id===id);
+    if(closure?.cerradoAutomaticamente===true){ alert('El sorteo tiene un resultado publicado. Para corregirlo, revisá el resultado.'); return; }
     if(!confirm('¿Reabrir este sorteo para ventas?')) return;
     try {
       await window.fs.deleteDoc(window.fs.doc(window.fs.db, 'configuracion', id));
@@ -187,11 +206,14 @@ Object.assign(App, {
     if(!box) return;
     const today = crDateStr();
     const list = this.closures
-      .filter(c => c.crDate >= today)
+      .filter(c => c.crDate>=today && this.closureIsActive(c, c.crDate))
       .sort((a,b) => (a.crDate + a.draw).localeCompare(b.crDate + b.draw));
 
+    const signature=JSON.stringify(list.map(c=>[c._id,c.draw,c.crDate,c.motivo,c.cerradoAutomaticamente]));
+    if(box.dataset.signature===signature) return;
+    box.dataset.signature=signature;
     if(!list.length){
-      box.innerHTML = '<div class="empty-note">No hay cierres manuales activos</div>';
+      box.innerHTML = '<div class="empty-note">No hay cierres activos</div>';
       return;
     }
     box.innerHTML = list.map(c => `
@@ -200,7 +222,7 @@ Object.assign(App, {
           <b>${escapeHtml(c.draw)}</b> · <span class="mono">${escapeHtml(formatDMY(c.crDate))}</span><br>
           <span style="color:var(--text-muted);">${escapeHtml(c.motivo || '')}</span>
         </div>
-        <button class="btn-small" onclick="App.reopenDraw('${escapeHtml(c._id)}')">Reabrir</button>
+        ${c.cerradoAutomaticamente===true ? '<span class="small">Resultado publicado</span>' : `<button class="btn-small" onclick="App.reopenDraw('${escapeHtml(c._id)}')">Reabrir</button>`}
       </div>
     `).join('');
   }
