@@ -191,3 +191,8 @@ td{padding:8px; border-bottom:1px solid var(--navy-line);}
 @media(max-width:1200px){.sales-layout{grid-template-columns:170px minmax(0,1fr);} .sales-layout > div:last-child{grid-column:2;} .block-form{grid-template-columns:1fr 1fr;}}
 @media(max-width:760px){.sales-layout{grid-template-columns:minmax(0,1fr);} .sales-layout > div:last-child{grid-column:auto;}}
 @media(max-width:600px){.block-form{grid-template-columns:1fr;} .number-block-row{flex-wrap:wrap;}}
+
+/* Saldos por punto de venta */
+.point-balances{display:grid; grid-template-columns:minmax(0,1fr); gap:10px; max-height:480px; overflow-y:auto;}
+.point-balances .m-label{overflow-wrap:anywhere;}
+.point-balances .m-value{font-size:17px; overflow-wrap:anywhere;}

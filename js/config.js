@@ -13,11 +13,8 @@ const DRAWS = [
   {key:'primera_pm',  name:'La Primera (6:00 PM)',      country:'DO', closeH:17, closeM:0},
 ];
 
-function ownerLabel(role){
-  return role==='libreria' ? 'Librería'
-       : role==='supermercado' ? 'Supermercado'
-       : role==='admin' ? 'Administración'
-       : (role||'—');
+function ownerLabel(id){
+  return id==='admin' ? 'Administración' : App.pointName(id);
 }
 
 // Nica y La Primera no juegan reventado

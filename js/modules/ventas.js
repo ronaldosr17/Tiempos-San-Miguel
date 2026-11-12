@@ -95,6 +95,8 @@ Object.assign(App, {
     if(excedido){ alert(`El número ${excedido} supera el límite de ${money(this.maxBet)}.`); return; }
     const buyer = document.getElementById('buyerInput').value.trim() || 'Anónimo';
 
+    const owner = this.financeOwner('gastoOwner');
+    if(!owner) return;
     const lines = this.currentLines.map(l=>({...l}));
     const blocked = lines.find(l=>this.isNumberBlocked(l.num, drawObj.name));
     if(blocked){ alert(`El número ${blocked.num} está bloqueado. Quitalo del tiquete para continuar.`); return; }
@@ -115,7 +117,7 @@ Object.assign(App, {
         category: 'Venta de Tiquetes',
         detail: `Venta ${id} · ${drawObj.name}`,
         amount: total, 
-        owner: this.currentRole, 
+        owner,
         draw: drawObj.name, 
         seller: this.currentProfile.name,
         locked: false
@@ -133,7 +135,7 @@ Object.assign(App, {
         total, 
         buyer,
         vendor: this.currentProfile.name,
-        owner: this.currentRole, 
+        owner,
         paid: false, 
         status: 'registrada',
         movDocId: movRef.id
@@ -210,7 +212,7 @@ Object.assign(App, {
 
   canDeleteTicket(t){
     if(this.currentRole === 'admin') return true;      // el admin siempre puede
-    if(t.owner !== this.currentRole) return false;     // solo tiquetes de su negocio
+    if(t.owner !== this.currentOwnerId()) return false;     // solo tiquetes de su negocio
     if(t.paid) return false;                           // nunca uno ya pagado
     if(t.crDate !== crDateStr()) return false;         // solo tiquetes de hoy
     const draw = DRAWS.find(d => d.name === t.draw);

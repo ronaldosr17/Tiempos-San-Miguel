@@ -105,6 +105,9 @@
   <!-- FINANZAS -->
   <div class="layout tab-panel hidden" data-tab="finanzas">
     <div>
+      <div class="panel hidden" id="movOwnerField">
+        <div class="field" style="margin:0;"><label for="movOwner">Punto de venta — balance y movimientos</label><select id="movOwner" onchange="App.renderAll()"><option value="">Todos los puntos de venta</option></select></div>
+      </div>
       <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
           <h3 id="movTitle" style="margin:0;">Movimientos de hoy</h3>
@@ -112,7 +115,7 @@
         </div>
         <div id="riskBanner" class="warn-banner hidden"></div>
         <div id="movHistoryFilters" class="hidden">
-        <div class="bet-row" style="grid-template-columns:1fr 1fr 1fr 1fr auto; margin-bottom:14px;">
+        <div class="bet-row" style="grid-template-columns:1fr 1fr 1fr auto; margin-bottom:14px;">
           <div class="field"><label>Desde</label><input id="movDateFrom" type="date" onchange="App.renderAll()"></div>
           <div class="field"><label>Hasta</label><input id="movDateTo" type="date" onchange="App.renderAll()"></div>
           <div class="field">
@@ -124,14 +127,6 @@
               <option value="Gasto">Gasto</option>
               <option value="Retiro">Retiro de caja</option>
               <option value="Abono">Abono de caja</option>
-            </select>
-          </div>
-          <div class="field" id="movOwnerField">
-            <label>Negocio</label>
-            <select id="movOwner" onchange="App.renderAll()">
-              <option value="">Todos</option>
-              <option value="libreria">Librería</option>
-              <option value="supermercado">Supermercado</option>
             </select>
           </div>
           <button class="btn-small" style="height:38px;" onclick="App.clearMovFilters()">Quitar filtros</button>
@@ -170,11 +165,8 @@
     </div>
     <div>
       <div class="panel hidden" id="adminBreakdown">
-        <h3>Balance por negocio</h3>
-        <div class="module-grid" style="grid-template-columns:1fr 1fr;">
-          <div class="module up"><div class="m-label">Librería</div><div class="m-value mono" id="balLibreria">₡0.00</div></div>
-          <div class="module up"><div class="m-label">Supermercado</div><div class="m-value mono" id="balSuper">₡0.00</div></div>
-        </div>
+        <h3>Balance por punto de venta</h3>
+        <div class="point-balances" id="pointBalances"></div>
       </div>
       <div class="panel">
         <h3>Balance general</h3>
@@ -196,8 +188,7 @@
         <div class="field">
           <label>Negocio</label>
           <select id="retiroOwner">
-            <option value="libreria">Librería</option>
-            <option value="supermercado">Supermercado</option>
+            <option value="">Elegí un punto de venta</option>
           </select>
         </div>
         <div class="field">
@@ -216,8 +207,7 @@
         <div class="field" id="gastoOwnerField">
           <label>Negocio</label>
           <select id="gastoOwner">
-            <option value="libreria">Librería</option>
-            <option value="supermercado">Supermercado</option>
+            <option value="">Elegí un punto de venta</option>
           </select>
         </div>
         <div class="field"><label>Categoría</label>
@@ -238,8 +228,7 @@
         <div class="field" id="cierreOwnerField">
           <label>Negocio</label>
           <select id="cierreOwner">
-            <option value="libreria">Librería</option>
-            <option value="supermercado">Supermercado</option>
+            <option value="">Elegí un punto de venta</option>
           </select>
         </div>
         <div class="field"><label>Efectivo contado</label><input id="cierreEfectivo" type="number" min="0" step="1" placeholder="0"></div>
@@ -320,6 +309,7 @@
           <h3 id="repTitle" style="margin:0;">Tiquetes de hoy</h3>
           <button class="btn-small" id="repToggleBtn" onclick="App.toggleRepHistory()">Ver otros días ▾</button>
         </div>
+        <div class="field hidden" id="repOwnerField"><label for="repOwner">Punto de venta</label><select id="repOwner" onchange="App.renderReports()"><option value="">Todos los puntos de venta</option></select></div>
         <div class="search-row" style="gap:0;">
           <span class="mono" style="background:var(--navy-line); border:1px solid var(--navy-line); border-right:none; padding:0 10px; border-radius:8px 0 0 8px; color:var(--text-muted); font-size:13.5px; display:flex; align-items:center;">TSM-</span>
           <input id="repSearch" placeholder="AAA-00001" style="border-radius:0 8px 8px 0;" oninput="App.renderAll()">
@@ -444,22 +434,28 @@
         <div class="field"><label>Contraseña temporal</label><input id="newUsrPass" type="password" placeholder="Mínimo 6 caracteres"></div>
         <div class="field"><label>Nombre completo</label><input id="newUsrName" placeholder="Juan Pérez"></div>
         <div class="field">
-          <label>Rol / Negocio</label>
-          <select id="newUsrRole">
-            <option value="libreria">Librería</option>
-            <option value="supermercado">Supermercado</option>
+          <label for="newUsrRole">Rol</label>
+          <select id="newUsrRole" onchange="App.onNewUserRoleChange()">
+            <option value="vendedor">Vendedor</option>
             <option value="admin">Administrador</option>
           </select>
         </div>
+        <div class="field" id="newUsrPointField"><label for="newUsrPoint">Punto de venta</label><select id="newUsrPoint"><option value="">Elegí un punto de venta</option></select></div>
         <button class="btn-small gold" onclick="App.createUserAccount()">Crear Cuenta en el Sistema</button>
       </div>
     </div>
     <div>
       <div class="panel">
-        <h3>Información</h3>
-        <div style="font-size:12.5px; color:var(--text-muted); line-height:1.7;">
-          Aquí puedes registrar nuevos usuarios para que inicien sesión en la aplicación. Asegúrate de asignarles el rol correcto para que filtren automáticamente sus ventas e ingresos según corresponda.
-        </div>
+        <h3>Puntos de venta</h3>
+        <p class="block-help">Cada punto tiene su propia caja. Varios vendedores asignados al mismo punto comparten esa caja. Un punto nuevo empieza en ₡0.</p>
+        <div id="pointsStatus" class="block-help" aria-live="polite"></div>
+        <form onsubmit="event.preventDefault(); App.savePoint();">
+          <div class="field"><label for="pointEditId">Crear o editar</label><select id="pointEditId" onchange="App.onPointEditChange()"><option value="">Crear un punto nuevo</option></select></div>
+          <div class="field"><label for="pointName">Nombre del punto de venta</label><input id="pointName" maxlength="80" placeholder="Librería Arenal, Super Pérez…" required></div>
+          <div class="field"><label for="pointType">Tipo de negocio</label><input id="pointType" maxlength="50" placeholder="Librería, supermercado, restaurante, taller…"></div>
+          <button class="btn-small gold" type="submit" id="savePointButton">Crear punto de venta</button>
+        </form>
+        <p class="block-help" style="margin-top:12px;">La Librería y el Supermercado actuales conservan su historial y balance. Cambiar el nombre de un punto conserva su caja.</p>
       </div>
     </div>
   </div>
@@ -474,6 +470,7 @@
 <script src="js/utils.js"></script>
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
+<script src="js/modules/puntos.js"></script>
 <script src="js/modules/sorteos.js"></script>
 <script src="js/modules/bloqueos.js"></script>
 <script src="js/modules/ventas.js"></script>
