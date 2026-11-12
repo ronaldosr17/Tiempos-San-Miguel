@@ -30,7 +30,7 @@ Object.assign(App, {
 
   async payTicket(id){
     const t = this.tickets.find(x=>x.id===id);
-    if(!t || t.paid || !t.premiado) return;
+    if(!t || t.paid || !t.premiado || (this.currentRole!=='admin' && t.owner!==this.currentOwnerId())) return;
     try {
       const movId = await this.getNextSeq('movimientos');
       const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {

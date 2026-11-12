@@ -34,7 +34,13 @@ const App = {
       window.firebaseAuth.onChange(async (user) => {
         if(!user){ 
           this.currentRole = null; 
-          this.currentUid = null; 
+          this.currentUid = null;
+          this.currentProfile = null;
+          this.currentLines = [];
+          this.renderLines();
+          document.getElementById('buyerInput').value = '';
+          document.getElementById('payResult').textContent = 'Ingresá un número de tiquete para buscarlo';
+          document.getElementById('printArea').textContent = 'Seleccioná un tiquete para verlo aquí';
           this.clearSubscriptions();
           this.showLogin(); 
           return; 
@@ -97,10 +103,15 @@ const App = {
   },
 
   async enterApp(user, profile){
+    if(!['admin','vendedor','libreria','supermercado'].includes(profile.role) || (profile.role!=='admin' && !this.pointIdForProfile(profile))){
+      await window.firebaseAuth.signOut();
+      throw new Error('La cuenta necesita un rol y un punto de venta válidos.');
+    }
     this.currentRole = profile.role;
     this.currentUid = user.uid;
     this.currentProfile = profile; 
-    document.getElementById('userName').textContent = `${profile.name} (${ownerLabel(this.currentRole)})`;
+    this.updateUserPointLabel();
+    this.currentLines = []; this.renderLines();
     document.getElementById('login').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     this.applyRoleUI(this.currentRole);
@@ -113,6 +124,8 @@ const App = {
     this.unsubscribes.forEach(u => u());
     this.unsubscribes = [];
     this.tickets = []; this.movs = []; this.results = []; this.cierres = []; this.closures = [];
+    this.points = {}; this.pointsReady = false;
+    this.renderPointSelectors();
     this.numberBlocks = {}; this.numberBlocksReady = false;
     this.renderNumberBlocks();
   },
@@ -121,7 +134,9 @@ const App = {
     this.clearSubscriptions();
     const role = this.currentRole;
     const isAdmin = role === 'admin';
+    this.subscribePoints();
     this.subscribeNumberBlocks();
+    const ownerId = this.currentOwnerId();
 
     const unsubLim = window.fs.onSnapshot(window.fs.doc(window.fs.db, 'configuracion', 'limites'), (snap) => {
       if(snap.exists()){
@@ -135,7 +150,7 @@ const App = {
     this.unsubscribes.push(unsubLim);
 
     let qTiquetes = window.fs.collection(window.fs.db, 'tiquetes');
-    if (!isAdmin) qTiquetes = window.fs.query(qTiquetes, window.fs.where('owner', '==', role));
+    if (!isAdmin) qTiquetes = window.fs.query(qTiquetes, window.fs.where('owner', '==', ownerId));
     const unsubTiq = window.fs.onSnapshot(qTiquetes, (snap) => {
       this.tickets = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       this.renderAll();
@@ -143,7 +158,7 @@ const App = {
     this.unsubscribes.push(unsubTiq);
 
     let qMovs = window.fs.collection(window.fs.db, 'movimientos');
-    if (!isAdmin) qMovs = window.fs.query(qMovs, window.fs.where('owner', '==', role));
+    if (!isAdmin) qMovs = window.fs.query(qMovs, window.fs.where('owner', '==', ownerId));
     const unsubMov = window.fs.onSnapshot(qMovs, (snap) => {
       this.movs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       this.renderAll();
@@ -158,7 +173,7 @@ const App = {
     this.unsubscribes.push(unsubRes);
 
     let qCierres = window.fs.collection(window.fs.db, 'cierres');
-    if (!isAdmin) qCierres = window.fs.query(qCierres, window.fs.where('owner', '==', role));
+    if (!isAdmin) qCierres = window.fs.query(qCierres, window.fs.where('owner', '==', ownerId));
     const unsubCierres = window.fs.onSnapshot(qCierres, (snap) => {
       this.cierres = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       this.renderCierres();
@@ -207,7 +222,7 @@ const App = {
     const retiroBox = document.getElementById('retiroPanel');
     if(retiroBox) retiroBox.classList.toggle('hidden', !isAdmin);
     
-    ['movOwnerField','gastoOwnerField','cierreOwnerField'].forEach(id=>{
+    ['movOwnerField','gastoOwnerField','cierreOwnerField','repOwnerField'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.classList.toggle('hidden', !isAdmin);
     });

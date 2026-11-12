@@ -14,7 +14,7 @@ Object.assign(App, {
   },
 
   async registerExpense(){
-    const owner = this.currentRole === 'admin' ? document.getElementById('gastoOwner').value : this.currentRole;
+    const owner = this.financeOwner('gastoOwner');
     if(!owner){ alert('Elegí el negocio.'); return; }
     const categoria = document.getElementById('gastoCategoria').value;
     const detalleRaw = document.getElementById('gastoDetalle').value.trim();
@@ -37,7 +37,7 @@ Object.assign(App, {
   // Retiro: el admin saca dinero físico del negocio (resta). Abono: el admin le entrega dinero al negocio (suma).
   async registerCashMove(){
     if(this.currentRole !== 'admin') return;
-    const owner = document.getElementById('retiroOwner').value;
+    const owner = this.financeOwner('retiroOwner');
     const tipo = document.getElementById('retiroTipo').value;           // 'Retiro' | 'Abono'
     const detalleRaw = document.getElementById('retiroDetalle').value.trim();
     const monto = parseFloat(document.getElementById('retiroMonto').value);
@@ -72,7 +72,8 @@ Object.assign(App, {
   },
 
   async saveCierre(){
-    const owner = this.currentRole === 'admin' ? document.getElementById('cierreOwner').value : this.currentRole;
+    const owner = this.financeOwner('cierreOwner');
+    if(!owner) return;
     const efectivo = parseFloat(document.getElementById('cierreEfectivo').value);
     if(isNaN(efectivo) || efectivo<0){ alert('Ingresá el efectivo.'); return; }
     
@@ -101,7 +102,8 @@ Object.assign(App, {
   renderCierres(){
     const body = document.getElementById('cierreBody');
     if(!body) return;
-    const list = this.cierres.slice().reverse();
+    const owner = this.selectedFinanceOwner();
+    const list = this.cierres.filter(c=>!owner || c.owner===owner).slice().reverse();
     body.innerHTML = '';
     list.forEach(c=>{
       const tr = document.createElement('tr');
@@ -134,7 +136,7 @@ Object.assign(App, {
     const dateFrom = hist ? document.getElementById('movDateFrom').value : '';
     const dateTo = hist ? document.getElementById('movDateTo').value : '';
     const type = hist ? document.getElementById('movType').value : '';
-    const owner = (hist && document.getElementById('movOwner')) ? document.getElementById('movOwner').value : '';
+    const owner = this.selectedFinanceOwner();
 
     let list = this.movs.filter(m=>{
       const mDate = movDateKey(m);
@@ -196,25 +198,19 @@ Object.assign(App, {
     const bTop = document.getElementById('balanceTop');
     if(bTop) bTop.textContent = money(balance);
 
-    if(this.currentRole === 'admin'){
-      const libBal = this.movs.filter(m=>m.owner==='libreria').reduce((s,m)=>s+m.amount, 0);
-      const supBal = this.movs.filter(m=>m.owner==='supermercado').reduce((s,m)=>s+m.amount, 0);
-      const bLib = document.getElementById('balLibreria');
-      if(bLib) bLib.textContent = money(libBal);
-      const bSup = document.getElementById('balSuper');
-      if(bSup) bSup.textContent = money(supBal);
-    }
+    this.renderPointBalances();
+    this.renderCierres();
 
-    this.renderCashMoves();
+    this.renderCashMoves(filteredMovs);
     this.renderDrawSummary(filteredMovs);
     this.renderDaySummary(filteredMovs);
   },
 
   // Apartado "Retiros y abonos": últimos 50 movimientos de ese tipo
-  renderCashMoves(){
+  renderCashMoves(movs = this.movs){
     const body = document.getElementById('cashBody');
     if(!body) return;
-    const list = this.movs
+    const list = movs
       .filter(m => m.type === 'Retiro' || m.type === 'Abono')
       .sort((a,b) => (b.crDate||b.date||'').localeCompare(a.crDate||a.date||''))
       .slice(0, 50);

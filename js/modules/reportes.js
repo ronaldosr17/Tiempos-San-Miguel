@@ -10,6 +10,7 @@ Object.assign(App, {
 
   clearReportFilters(){
     document.getElementById('repSearch').value = '';
+    document.getElementById('repOwner').value = '';
     document.getElementById('repDateFrom').value = '';
     document.getElementById('repDateTo').value = '';
     document.getElementById('repDraw').value = '';
@@ -31,7 +32,9 @@ Object.assign(App, {
     const draw = hist ? document.getElementById('repDraw').value : '';
     const premioFilter = hist ? document.getElementById('repPremio').value : '';
 
+    const owner = this.currentRole==='admin' ? document.getElementById('repOwner').value : this.currentOwnerId();
     let list = this.tickets.filter(t=>{
+      if(owner && t.owner!==owner) return false;
       // Por defecto solo los de hoy; si se escribe un código en el buscador se busca en todos los días
       if(!hist && !search && t.crDate !== today) return false;
       if(search && !normalizeCode(t.id).includes(search)) return false;

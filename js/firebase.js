@@ -26,13 +26,14 @@ window.firebaseAuth = {
 };
 
 // Crea un usuario con una app secundaria para no cerrar la sesión del admin
-window.createNewUserAccount = async (email, pass, name, role) => {
+window.createNewUserAccount = async (email, pass, name, role, puntoVentaId) => {
+  if(!['admin','vendedor'].includes(role) || (role==='vendedor' && !puntoVentaId)) throw new Error('Seleccioná un rol y un punto de venta.');
   const secondaryApp = initializeApp(firebaseConfig, "SecondaryAppForCreation");
   const secondaryAuth = getAuth(secondaryApp);
   try {
     const userCred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
     const uid = userCred.user.uid;
-    await setDoc(doc(fbDb, 'usuarios', uid), { name, role, email });
+    await setDoc(doc(fbDb, 'usuarios', uid), { name, role, email, ...(role==='vendedor' ? {puntoVentaId} : {}) });
     await signOut(secondaryAuth);
     await deleteApp(secondaryApp);
     return true;
