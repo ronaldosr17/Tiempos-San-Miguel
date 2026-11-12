@@ -1,11 +1,13 @@
 # Bloqueos temporales de números
 
 En Reportes, el administrador puede indicar un número de 00 a 99 y una fecha y
-hora de vencimiento en Costa Rica, o desbloquear antes de que venza. Un bloqueo
-aplica a todos los sorteos y negocios. Volver a bloquear el mismo número cambia
-su vencimiento. No modifica tiquetes vendidos anteriormente.
+hora de vencimiento en Costa Rica, o desbloquear antes de que venza. Se elige Tica, Nica o La Primera: un bloqueo aplica a todos los horarios de
+esa familia y a ambos negocios. El mismo número puede tener vencimientos distintos
+por familia. Volver a bloquear el mismo número y familia cambia su vencimiento. No modifica tiquetes vendidos anteriormente.
 
-En Ventas se muestran únicamente los números activos, sin fechas ni duración.
+En Ventas hay un panel independiente a la izquierda que agrupa los números
+activos por Tica, Nica y La Primera, sin fechas ni duración. En móvil se ubica
+antes del formulario.
 El vencimiento se evalúa cada segundo en las sesiones abiertas; no requiere
 cron-job.org. Los controles del administrador están ocultos para vendedores.
 Esto oculta el vencimiento en la interfaz; el dato se descarga para evaluar
@@ -15,7 +17,7 @@ de desarrollo.
 Los bloqueos viven en `configuracion/bloqueos_numeros`, con formato:
 
 ```json
-{"tipo":"bloqueos_numeros","numeros":{"05":{"hasta":"2026-12-01T18:00:00.000Z"}}}
+{"tipo":"bloqueos_numeros","numeros":{"tica_05":{"hasta":"2026-12-01T18:00:00.000Z"}}}
 ```
 
 La app espera una lectura confirmada por Firestore antes de permitir nuevas
@@ -49,5 +51,17 @@ Desbloquear. Verificar que un vendedor no puede escribir el documento de bloqueo
 `tests/number_blocks.browser.cjs` requiere Playwright y Chromium instalado
 (`/usr/bin/chromium`). Ejecutar `node tests/number_blocks.browser.cjs` desde un
 entorno con esas dependencias. Simula Firebase y no accede a la base real.
-Comprueba 13 casos: roles, fecha Costa Rica, visualización, bloqueo del borrador,
+Comprueba 20 casos: roles, fecha Costa Rica, visualización, bloqueo del borrador,
 validación remota en transacción, caducidad, desconexión y venta válida atómica.
+
+## Compatibilidad y horario de La Primera
+
+Los documentos anteriores con claves `05` se interpretan como bloqueos de las
+tres familias para conservar su alcance hasta vencer. Al guardar o desbloquear,
+la transacción usa claves `tica_05`, `nica_05` y `primera_05`. El administrador
+puede quitar cada familia por separado. Refrescar las sesiones abiertas después
+del despliegue; el cliente anterior no reconoce las nuevas claves.
+
+La Primera (6:00 PM) conserva su nombre e identificadores para el historial,
+los tiquetes y el origen de scraping, pero cierra ventas a las 17:00 Costa Rica.
+El importador permite ese resultado a partir de las 17:02 cuando esté publicado.

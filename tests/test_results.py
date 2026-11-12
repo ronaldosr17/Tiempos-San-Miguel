@@ -184,3 +184,13 @@ class PendingResultsTests(unittest.TestCase):
             fetch.return_value.__enter__.return_value = response
             module.main()
             client.assert_not_called()
+
+
+class PrimeraClosingTests(unittest.TestCase):
+    def test_afternoon_primera_imports_after_17_not_18(self):
+        html = card(name='LA PRIMERA 6 PM', ball=None)
+        before = datetime(2026, 11, 10, 17, 1, tzinfo=TZ)
+        after = before.replace(minute=2)
+        self.assertEqual(parse_results(html, before)[0], [])
+        result = parse_results(html, after)[0][0]
+        self.assertEqual(result['draw'], 'La Primera (6:00 PM)')

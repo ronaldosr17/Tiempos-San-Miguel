@@ -10,7 +10,7 @@ const DRAWS = [
   {key:'nica_vesper', name:'Nica Vespertina (6:00 PM)', country:'NI', closeH:18, closeM:0, weekendOnly:true},
   {key:'nica_noche',  name:'Nica Noche (9:00 PM)',      country:'NI', closeH:21, closeM:0},
   {key:'primera_am',  name:'La Primera (10:00 AM)',     country:'DO', closeH:10, closeM:0},
-  {key:'primera_pm',  name:'La Primera (6:00 PM)',      country:'DO', closeH:18, closeM:0},
+  {key:'primera_pm',  name:'La Primera (6:00 PM)',      country:'DO', closeH:17, closeM:0},
 ];
 
 function ownerLabel(role){
