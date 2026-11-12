@@ -29,7 +29,7 @@ Object.assign(App, {
   readPoints(snap){
     const points = snap.exists() ? (snap.data().puntos || {}) : {};
     if(!points || typeof points !== 'object' || Array.isArray(points) || Object.entries(points).some(([id,p])=>
-      !this.validPointId(id) || !p || typeof p.nombre !== 'string' || !p.nombre.trim() || p.nombre.length>80 || typeof p.tipo !== 'string' || p.tipo.length>50)){
+      !this.validPointId(id) || !p || typeof p.nombre !== 'string' || !p.nombre.trim() || p.nombre.length>80 || typeof p.tipo !== 'string' || p.tipo.length>50 || (p.estado!=null && !['activo','archivado','eliminando','eliminado'].includes(p.estado)))){
       throw new Error('El catálogo de puntos de venta no es válido.');
     }
     return points;
@@ -40,6 +40,7 @@ Object.assign(App, {
     const unsub = window.fs.onSnapshot(this.pointRef(), {includeMetadataChanges:true}, snap=>{
       try { this.points = this.readPoints(snap); this.pointsReady = !snap.metadata.fromCache; }
       catch(e){ console.error(e); this.pointsReady = false; }
+      this.enforcePointAccess();
       this.renderPointSelectors();
       this.updateUserPointLabel();
       this.renderAll();
@@ -61,13 +62,22 @@ Object.assign(App, {
 
   renderPointSelectors(){
     const options = Object.entries(this.allPoints()).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'));
-    ['movOwner','gastoOwner','cierreOwner','retiroOwner','newUsrPoint','pointEditId','repOwner'].forEach(id=>{
+    ['movOwner','gastoOwner','cierreOwner','retiroOwner','newUsrPoint','pointEditId','repOwner','pointManageId'].forEach(id=>{
       const select = document.getElementById(id);
       if(!select) return;
       const previous = select.value;
       const placeholder = id==='pointEditId' ? 'Crear un punto nuevo' : ['movOwner','repOwner'].includes(id) ? 'Todos los puntos de venta' : 'Elegí un punto de venta';
       const items = [new Option(placeholder,'')];
-      options.forEach(([key,point])=>items.push(new Option(point.nombre,key)));
+      options.forEach(([key,point])=>{
+        const state=point.estado||'activo';
+        const history=['movOwner','repOwner'].includes(id);
+        const manage=id==='pointManageId';
+        const edit=id==='pointEditId';
+        if(!history && !manage && !edit && state!=='activo')return;
+        if((manage || edit) && state==='eliminado')return;
+        if(edit && state==='eliminando')return;
+        items.push(new Option(point.nombre+(state!=='activo' ? ' · '+state : ''),key));
+      });
       // Mantener visible cualquier caja histórica no presente en el catálogo.
       if(['movOwner','repOwner'].includes(id)){
         const records = id==='movOwner' ? this.movs : this.tickets;
@@ -75,10 +85,12 @@ Object.assign(App, {
       }
       select.replaceChildren(...items);
       if(items.some(item=>item.value===previous)) select.value = previous;
+      else if(id==='pointEditId' && previous) this.onPointEditChange();
     });
     const status = document.getElementById('pointsStatus');
     if(status){ status.textContent = this.pointsReady ? '' : 'Esperando conexión y permisos para gestionar puntos de venta.'; }
     this.onNewUserRoleChange();
+    this.renderPointManagement();
   },
 
   onNewUserRoleChange(){
@@ -110,11 +122,12 @@ Object.assign(App, {
         const ref = this.pointRef();
         const points = this.readPoints(await tx.get(ref));
         const all = {...this.defaultPoints(), ...points};
-        if(Object.entries(all).some(([key,p])=>key!==id && p.nombre.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){
+        if(existingId && ['eliminando','eliminado'].includes(all[id]?.estado)) throw new Error('Este punto no se puede editar durante o después del borrado.');
+        if(Object.entries(all).some(([key,p])=>key!==id && p.estado!=='eliminado' && p.nombre.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){
           throw new Error('Ya existe un punto de venta con ese nombre.');
         }
         if(!existingId && all[id]) throw new Error('No se pudo generar el identificador. Intentá otra vez.');
-        points[id] = {nombre:name, tipo:type};
+        points[id] = {...(all[id]||{}), nombre:name, tipo:type};
         tx.set(ref, {tipo:'puntos_venta', puntos:points});
       });
       document.getElementById('pointEditId').value = '';
@@ -126,7 +139,7 @@ Object.assign(App, {
 
   financeOwner(fieldId){
     const id = this.currentRole==='admin' ? document.getElementById(fieldId).value : this.currentOwnerId();
-    if(!id || !this.allPoints()[id] || (!this.pointsReady && !this.defaultPoints()[id])){
+    if(!id || !this.pointsReady || !this.pointIsActive(id)){
       alert('Elegí un punto de venta válido y verificá la conexión.');
       return null;
     }
@@ -150,7 +163,11 @@ Object.assign(App, {
       const name = document.createElement('div'); name.className='m-label'; name.textContent=this.pointName(id);
       const amount = document.createElement('div'); amount.className='m-value mono';
       const balance = this.pointBalance(id); amount.textContent=money(balance); amount.style.color=balance<0 ? 'var(--red)' : 'var(--green)';
-      card.append(name,amount); container.appendChild(card);
+      card.append(name,amount);
+      const state=this.allPoints()[id]?.estado;
+      if(state && state!=='activo'){const tag=document.createElement('div');tag.className='point-state';tag.textContent=state;card.appendChild(tag);}
+      if(state==='eliminado' && !this.movs.some(m=>m.owner===id)) return;
+      container.appendChild(card);
     });
   }
 });

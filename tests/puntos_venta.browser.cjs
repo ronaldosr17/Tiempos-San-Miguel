@@ -19,7 +19,7 @@ const initial=JSON.stringify(legacyMovs);App.movs=legacyMovs.slice();
 const snap=value=>({exists:()=>value!==undefined,data:()=>structuredClone(value),metadata:{fromCache:false}});
 const query=(name,condition)=>({name,condition});
 window.fs={db:{},collection:(_,name)=>query(name),doc:(first,name,id)=> typeof name==='string'?{name,id}: {name:first.name,id:'auto_'+(++sequence)},where:(field,op,value)=>({field,op,value}),query:(ref,cond)=>query(ref.name,cond),
-runTransaction:async(_,fn)=>{const pending=[];const result=await fn({get:async ref=>snap(ref.id==='puntos_venta'?registry:undefined),set:(ref,value)=>pending.push({ref,value:structuredClone(value)})});pending.forEach(w=>{writes.push(w);if(w.ref.id==='puntos_venta')registry=w.value;});return result;},
+runTransaction:async(_,fn)=>{const pending=[];const result=await fn({get:async ref=>snap(ref.id==='puntos_venta'?registry:ref.name==='tiquetes'?App.tickets.find(t=>t._id===ref.id):undefined),update:(ref,value)=>updates.push({ref,value}),set:(ref,value)=>pending.push({ref,value:structuredClone(value)})});pending.forEach(w=>{writes.push(w);if(w.ref.id==='puntos_venta')registry=w.value;});return result;},
 addDoc:async(ref,value)=>{writes.push({ref,value:structuredClone(value)});return {id:'added_'+(++sequence)};},updateDoc:async(ref,value)=>updates.push({ref,value}),
 onSnapshot:(ref,options,callback)=>{queries.push(ref);const cb=typeof options==='function'?options:callback;if(ref.id==='puntos_venta')cb(snap(registry));return ()=>{};}};
 App.getNextSeq=async()=>++sequence;
@@ -58,7 +58,7 @@ document.getElementById('drawSelect').value='Tica Día (12:55 PM)';App.currentLi
 const sale=writes.slice(start);check(sale.length===2&&sale.every(w=>w.value.owner===arenal),'ticket and sale income both use new point ID');
 App.tickets=[{id:'foreign',owner:gutierrez,paid:false,premiado:true,_id:'foreign'}];const payStart=writes.length;await App.payTicket('foreign');check(writes.length===payStart,'seller cannot register payout for another point ticket');
 check(!App.canDeleteTicket({owner:gutierrez,paid:false,crDate:crDateStr(),draw:'Tica Día (12:55 PM)'}),'seller cannot delete another point ticket');
-App.tickets=[{id:'own',owner:arenal,paid:false,premiado:true,premio:850,_id:'own'}];App.findTicketForPay=()=>{};await App.payTicket('own');check(writes.at(-1).value.owner===arenal&&writes.at(-1).value.type==='Pago','payout retains ticket business ID');
+App.tickets=[{id:'own',owner:arenal,paid:false,premiado:true,premio:850,status:'registrada',crDate:crDateStr(),_id:'own'}];App.findTicketForPay=()=>{};await App.payTicket('own');check(writes.at(-1).value.owner===arenal&&writes.at(-1).value.type==='Pago','payout retains ticket business ID');
 App.movs=[{_id:'own-m',owner:arenal,amount:300,locked:false},{_id:'other-m',owner:gutierrez,amount:900,locked:false}];document.getElementById('cierreEfectivo').value='300';updates=[];await App.saveCierre();
 check(writes.at(-1).value.owner===arenal&&writes.at(-1).value.balance===300&&updates.length===1&&updates[0].ref.id==='own-m','cash close counts and locks only assigned point movements');
 App.tickets=[{id:'TSM-own',owner:arenal,draw:'Tica Día (12:55 PM)',crDate:crDateStr(),total:100},{id:'TSM-other',owner:gutierrez,draw:'Tica Día (12:55 PM)',crDate:crDateStr(),total:200}];App.renderReports();

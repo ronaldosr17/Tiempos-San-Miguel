@@ -2,7 +2,8 @@ import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, addDoc,
-  updateDoc, deleteDoc, collection, onSnapshot, query, where, runTransaction
+  updateDoc, deleteDoc, collection, onSnapshot, query, where, runTransaction,
+  getDocsFromServer, getCountFromServer, limit, orderBy, documentId, startAfter
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -45,7 +46,8 @@ window.createNewUserAccount = async (email, pass, name, role, puntoVentaId) => {
 
 window.fs = {
   db: fbDb, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection,
-  onSnapshot, query, where, runTransaction
+  onSnapshot, query, where, runTransaction, getDocsFromServer, getCountFromServer,
+  limit, orderBy, documentId, startAfter
 };
 
 window.dispatchEvent(new Event('firebase-ready'));

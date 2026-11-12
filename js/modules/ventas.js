@@ -142,6 +142,7 @@ Object.assign(App, {
       };
 
       await window.fs.runTransaction(window.fs.db, async tx=>{
+        await this.assertPointActive(tx, owner);
         const snap = await tx.get(this.numberBlocksRef());
         const blocks = this.readNumberBlocks(snap);
         const blockedLine = lines.find(l=>this.isNumberBlocked(l.num, drawObj.name, blocks));

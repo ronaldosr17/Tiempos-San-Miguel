@@ -36,6 +36,9 @@ const App = {
           this.currentRole = null; 
           this.currentUid = null;
           this.currentProfile = null;
+          this.pendingPointRemoval = null;
+          const removalDialog = document.getElementById('pointRemovalDialog');
+          if(removalDialog.open) removalDialog.close();
           this.currentLines = [];
           this.renderLines();
           document.getElementById('buyerInput').value = '';
@@ -107,6 +110,7 @@ const App = {
       await window.firebaseAuth.signOut();
       throw new Error('La cuenta necesita un rol y un punto de venta válidos.');
     }
+    this.pointAccessClosed = false;
     this.currentRole = profile.role;
     this.currentUid = user.uid;
     this.currentProfile = profile; 
@@ -222,6 +226,7 @@ const App = {
     const retiroBox = document.getElementById('retiroPanel');
     if(retiroBox) retiroBox.classList.toggle('hidden', !isAdmin);
     
+    this.setupAdminFinanceLayout(isAdmin);
     ['movOwnerField','gastoOwnerField','cierreOwnerField','repOwnerField'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.classList.toggle('hidden', !isAdmin);
