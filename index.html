@@ -54,13 +54,18 @@
     </div>
 
   <!-- VENTAS -->
-  <div class="layout tab-panel" data-tab="ventas">
+  <div class="layout sales-layout tab-panel" data-tab="ventas">
+    <div class="number-blocks-column">
+      <div class="panel number-blocks-panel">
+        <h3>Números bloqueados</h3>
+        <div id="blockedNumbersSales" aria-live="polite">Cargando…</div>
+      </div>
+    </div>
     <div>
       <div class="panel">
         <h3>Nueva venta</h3>
         <select id="drawSelect" class="draw-select" onchange="App.onDrawChange()"></select>
         <div id="drawStatus" class="status-banner hidden"></div>
-        <div class="blocked-sales" aria-live="polite"><strong>Números bloqueados</strong><div id="blockedNumbersSales">Cargando…</div></div>
         <div class="field"><label>Nombre del comprador (opcional)</label><input id="buyerInput" placeholder="Anónimo" maxlength="30" autocomplete="off"></div>
 
         <div class="bet-row" id="betRowContainer" style="grid-template-columns:1fr 1fr 1.2fr auto auto;">
@@ -301,8 +306,9 @@
     <div>
       <div class="panel hidden" id="numberBlocksPanel">
         <h3>Bloquear un número</h3>
-        <p class="block-help">El bloqueo aplica a todos los sorteos. Los vendedores solo verán los números bloqueados.</p>
+        <p class="block-help">El bloqueo aplica a todos los horarios del sorteo elegido. Los vendedores solo verán el sorteo y sus números bloqueados.</p>
         <form onsubmit="event.preventDefault(); App.saveNumberBlock();" class="block-form">
+          <div class="field"><label for="blockFamily">Sorteo</label><select id="blockFamily"><option value="tica">Tica</option><option value="nica">Nica</option><option value="primera">La Primera</option></select></div>
           <div class="field"><label for="blockNumber">Número</label><input id="blockNumber" maxlength="2" inputmode="numeric" placeholder="05" oninput="App.onlyDigits(this)" required></div>
           <div class="field"><label for="blockUntil">Bloqueado hasta (hora Costa Rica)</label><input id="blockUntil" type="datetime-local" required></div>
           <button class="btn-small gold" id="saveNumberBlock" type="submit">Bloquear número</button>

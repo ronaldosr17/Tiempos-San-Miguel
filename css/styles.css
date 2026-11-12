@@ -173,12 +173,21 @@ td{padding:8px; border-bottom:1px solid var(--navy-line);}
   #printArea .big{ font-size:24pt !important; }
   #printArea .small{ font-size:14pt !important; }
 }
-/* Números bloqueados */
-.blocked-sales{border:1px solid var(--red); border-radius:8px; padding:12px; margin-bottom:14px; font-size:13px;}
-#blockedNumbersSales{font-family:'IBM Plex Mono',monospace; margin-top:7px; overflow-wrap:anywhere;}
+/* Números bloqueados por sorteo */
+.sales-layout{max-width:1600px; grid-template-columns:180px minmax(0,1fr) 260px;}
+.number-blocks-column{min-width:0;}
+.number-blocks-column > .number-blocks-panel:last-child{flex:0 0 auto;}
+.number-blocks-panel{padding:18px;}
+#blockedNumbersSales{font-size:13px; color:var(--text-muted);}
+.blocked-family + .blocked-family{margin-top:18px; padding-top:16px; border-top:1px solid var(--navy-line);}
+.blocked-family h4{font-size:13px; color:var(--text); margin-bottom:10px;}
+.blocked-number-chips{display:flex; flex-wrap:wrap; gap:7px;}
+.blocked-number-chips span{font-family:'IBM Plex Mono',monospace; color:var(--gold); background:var(--navy-deep); border:1px solid var(--navy-line); border-radius:7px; padding:7px 9px;}
 .block-help{font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.6;}
-.block-form{display:grid; grid-template-columns:100px minmax(180px,1fr) auto; gap:12px; align-items:end; margin-bottom:12px;}
+.block-form{display:grid; grid-template-columns:minmax(110px,1fr) 75px minmax(180px,1.5fr) auto; gap:12px; align-items:end; margin-bottom:12px;}
 .block-form .field{margin-bottom:0;}
 .block-form button{min-height:38px;}
 .number-block-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--navy-line); font-size:13px;}
+@media(max-width:1200px){.sales-layout{grid-template-columns:170px minmax(0,1fr);} .sales-layout > div:last-child{grid-column:2;} .block-form{grid-template-columns:1fr 1fr;}}
+@media(max-width:760px){.sales-layout{grid-template-columns:minmax(0,1fr);} .sales-layout > div:last-child{grid-column:auto;}}
 @media(max-width:600px){.block-form{grid-template-columns:1fr;} .number-block-row{flex-wrap:wrap;}}

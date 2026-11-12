@@ -23,7 +23,7 @@ DRAWS = {
     'NICA 6 PM': ('Nica Vespertina (6:00 PM)', 18, 0, False, True),
     'NICA 9 PM': ('Nica Noche (9:00 PM)', 21, 0, False, False),
     'LA PRIMERA 10 AM': ('La Primera (10:00 AM)', 10, 0, False, False),
-    'LA PRIMERA 6 PM': ('La Primera (6:00 PM)', 18, 0, False, False),
+    'LA PRIMERA 6 PM': ('La Primera (6:00 PM)', 17, 0, False, False),
 }
 
 
