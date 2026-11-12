@@ -1,0 +1,51 @@
+const {chromium}=require('playwright');
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+(async()=>{
+const root=path.resolve(__dirname,'..');
+const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname!=='review.local')return route.abort();
+if(u.pathname==='/js/firebase.js')return route.fulfill({contentType:'application/javascript',body:'window.firebaseAuth={onChange:()=>{}};'});
+const p=path.join(root,u.pathname==='/'?'index.html':u.pathname);return route.fulfill({contentType:p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'text/html',body:fs.readFileSync(p)});});
+await page.goto('http://review.local');
+const checks=await page.evaluate(async()=>{
+const checks=[];const check=(value,msg)=>{if(!value)throw Error(msg);checks.push(msg);};
+window.alert=message=>window.lastAlert=message;window.confirm=()=>true;
+getCRTime=()=>({h:8,m:0,s:0});
+App.currentRole='admin';App.currentProfile={name:'Test'};App.numberBlocksReady=true;App.applyRoleUI('admin');
+check(!document.getElementById('numberBlocksPanel').classList.contains('hidden'),'admin sees controls');
+let data={};let writes=[];
+const snap=()=>({exists:()=>true,data:()=>data,metadata:{fromCache:false}});
+window.fs={db:{},doc:(...args)=>args.join('/'),collection:(_,name)=>name,runTransaction:async(_,fn)=>fn({get:async()=>snap(),set:(ref,value)=>{writes.push({ref,value});if(ref.endsWith('/bloqueos_numeros'))data=value;}})};
+App.getNextSeq=async()=>1;
+document.getElementById('blockNumber').value='5';document.getElementById('blockUntil').value='2099-01-01T12:00';
+await App.saveNumberBlock();
+check(data.numeros['05'].hasta==='2099-01-01T18:00:00.000Z','expiry uses Costa Rica independent of browser timezone');
+App.numberBlocks=data.numeros;App.renderNumberBlocks();
+check(document.getElementById('blockedNumbersSales').textContent==='05','sales list contains only number');
+check(document.getElementById('numberBlocksAdmin').textContent.includes('hasta'),'admin sees expiration');
+App.applyRoleUI('libreria');App.currentRole='libreria';App.renderNumberBlocks();
+check(document.getElementById('numberBlocksPanel').classList.contains('hidden')&&!document.getElementById('numberBlocksAdmin').textContent,'seller cannot see admin expiry list');
+const before=writes.length;await App.saveNumberBlock();check(writes.length===before,'seller cannot save block');
+document.getElementById('drawSelect').value='Tica Día (12:55 PM)';document.getElementById('amtInput').value='100';document.getElementById('numInput').value='5';App.addLine();
+check(App.currentLines.length===0&&window.lastAlert.includes('bloqueado'),'blocked direct/reventado line rejected');
+App.currentLines=[{num:'05',amt:100,rev:50}];await App.confirmSale();check(writes.length===before,'already drafted blocked number cannot be sold');
+// Simulate block arriving after draft was prepared, missing from local snapshot.
+App.numberBlocks={};writes=[];await App.confirmSale();check(writes.length===0&&window.lastAlert.includes('05'),'transaction catches a remotely applied block without writing income');
+App.numberBlocksReady=false;App.currentLines=[];document.getElementById('numInput').value='06';App.addLine();check(App.currentLines.length===0,'unverified cache blocks new bets');
+App.numberBlocksReady=true;App.numberBlocks={'05':{hasta:'2000-01-01T00:00:00Z'}};App.renderNumberBlocks();check(!App.isNumberBlocked('05')&&document.getElementById('blockedNumbersSales').textContent==='Ninguno','expired block disappears automatically');
+App.currentRole='admin';await App.removeNumberBlock('05');check(!data.numeros['05'],'manual unblock updates shared config');
+App.currentRole='libreria';App.numberBlocks={};data={numeros:{}};App.currentLines=[{num:'06',amt:100,rev:0}];writes=[];await App.confirmSale();
+check(writes.length===2&&writes.some(w=>w.value.category==='Venta de Tiquetes')&&writes.some(w=>w.value.lines),'unblocked sale writes ticket and income in same transaction');
+// Restore an active block for the visual preview.
+App.numberBlocks={'05':{hasta:'2099-01-01T18:00:00Z'},'99':{hasta:'2099-01-01T18:00:00Z'}};App.renderNumberBlocks();App.showLogin=()=>{};
+document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');App.switchTab('ventas');
+return checks;
+});
+assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:checks.length,checks,startupErrors:errors},null,2));
+await page.setViewportSize({width:390,height:844});
+assert.equal(await page.locator('#blockedNumbersSales').textContent(),'05 · 99');
+await page.evaluate(()=>{App.currentRole='admin';App.applyRoleUI('admin');App.switchTab('reportes');App.renderNumberBlocks();});
+await page.setViewportSize({width:1400,height:900});
+assert.equal(await page.locator('#numberBlocksPanel').isVisible(),true);
+await browser.close();})();

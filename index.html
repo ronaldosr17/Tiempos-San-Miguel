@@ -60,6 +60,7 @@
         <h3>Nueva venta</h3>
         <select id="drawSelect" class="draw-select" onchange="App.onDrawChange()"></select>
         <div id="drawStatus" class="status-banner hidden"></div>
+        <div class="blocked-sales" aria-live="polite"><strong>Números bloqueados</strong><div id="blockedNumbersSales">Cargando…</div></div>
         <div class="field"><label>Nombre del comprador (opcional)</label><input id="buyerInput" placeholder="Anónimo" maxlength="30" autocomplete="off"></div>
 
         <div class="bet-row" id="betRowContainer" style="grid-template-columns:1fr 1fr 1.2fr auto auto;">
@@ -298,6 +299,16 @@
   <!-- REPORTES -->
   <div class="layout tab-panel hidden" data-tab="reportes">
     <div>
+      <div class="panel hidden" id="numberBlocksPanel">
+        <h3>Bloquear un número</h3>
+        <p class="block-help">El bloqueo aplica a todos los sorteos. Los vendedores solo verán los números bloqueados.</p>
+        <form onsubmit="event.preventDefault(); App.saveNumberBlock();" class="block-form">
+          <div class="field"><label for="blockNumber">Número</label><input id="blockNumber" maxlength="2" inputmode="numeric" placeholder="05" oninput="App.onlyDigits(this)" required></div>
+          <div class="field"><label for="blockUntil">Bloqueado hasta (hora Costa Rica)</label><input id="blockUntil" type="datetime-local" required></div>
+          <button class="btn-small gold" id="saveNumberBlock" type="submit">Bloquear número</button>
+        </form>
+        <div id="numberBlocksAdmin" aria-live="polite"></div>
+      </div>
       <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
           <h3 id="repTitle" style="margin:0;">Tiquetes de hoy</h3>
@@ -458,6 +469,7 @@
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
 <script src="js/modules/sorteos.js"></script>
+<script src="js/modules/bloqueos.js"></script>
 <script src="js/modules/ventas.js"></script>
 <script src="js/modules/resultados.js"></script>
 <script src="js/modules/pagos.js"></script>

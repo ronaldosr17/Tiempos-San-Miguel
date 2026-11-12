@@ -173,3 +173,12 @@ td{padding:8px; border-bottom:1px solid var(--navy-line);}
   #printArea .big{ font-size:24pt !important; }
   #printArea .small{ font-size:14pt !important; }
 }
+/* Números bloqueados */
+.blocked-sales{border:1px solid var(--red); border-radius:8px; padding:12px; margin-bottom:14px; font-size:13px;}
+#blockedNumbersSales{font-family:'IBM Plex Mono',monospace; margin-top:7px; overflow-wrap:anywhere;}
+.block-help{font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.6;}
+.block-form{display:grid; grid-template-columns:100px minmax(180px,1fr) auto; gap:12px; align-items:end; margin-bottom:12px;}
+.block-form .field{margin-bottom:0;}
+.block-form button{min-height:38px;}
+.number-block-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--navy-line); font-size:13px;}
+@media(max-width:600px){.block-form{grid-template-columns:1fr;} .number-block-row{flex-wrap:wrap;}}

@@ -113,12 +113,15 @@ const App = {
     this.unsubscribes.forEach(u => u());
     this.unsubscribes = [];
     this.tickets = []; this.movs = []; this.results = []; this.cierres = []; this.closures = [];
+    this.numberBlocks = {}; this.numberBlocksReady = false;
+    this.renderNumberBlocks();
   },
 
   subscribeToFirestore() {
     this.clearSubscriptions();
     const role = this.currentRole;
     const isAdmin = role === 'admin';
+    this.subscribeNumberBlocks();
 
     const unsubLim = window.fs.onSnapshot(window.fs.doc(window.fs.db, 'configuracion', 'limites'), (snap) => {
       if(snap.exists()){
@@ -189,6 +192,7 @@ const App = {
 
   applyRoleUI(role){
     const isAdmin = role === 'admin';
+    document.getElementById('numberBlocksPanel').classList.toggle('hidden', !isAdmin);
     const ventasBtn = document.querySelector('.nav-links button[data-tab="ventas"]');
     if(ventasBtn) ventasBtn.style.display = isAdmin ? 'none' : '';
     const resBtn = document.querySelector('.nav-links button[data-tab="resultados"]');
@@ -221,6 +225,7 @@ const App = {
     this.populateDrawSelect();
     this.refreshDrawStatus();
     this.processClosedDraws(now);
+    this.renderNumberBlocks();
   },
 
   onlyDigits(el){

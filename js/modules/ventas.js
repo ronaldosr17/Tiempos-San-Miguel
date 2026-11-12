@@ -13,7 +13,10 @@ Object.assign(App, {
   },
 
   randomNumber(){
-    const n = Math.floor(Math.random()*100);
+    if(this.savingSale || !this.canUseNumberBlocks()) return;
+    const available = Array.from({length:100}, (_,i)=>String(i).padStart(2,'0')).filter(n=>!this.isNumberBlocked(n));
+    if(!available.length){ alert('Todos los números están bloqueados.'); return; }
+    const n = available[Math.floor(Math.random()*available.length)];
     document.getElementById('numInput').value = String(n).padStart(2,'0');
     const sel = document.getElementById('drawSelect');
     const isNica = sel && sinReventado(sel.value);
@@ -25,6 +28,7 @@ Object.assign(App, {
   },
 
   addLine(){
+    if(this.savingSale || !this.canUseNumberBlocks()) return;
     const sel = document.getElementById('drawSelect');
     const draw = DRAWS.find(d=>d.name===sel.value);
     if(!draw || !isDrawOpen(draw, getCRTime())){ alert('Este sorteo ya cerró.'); return; }
@@ -36,7 +40,8 @@ Object.assign(App, {
     const revRaw = !isNica ? document.getElementById('revInput').value.trim() : '';
     const rev = revRaw ? parseFloat(revRaw) : 0;
 
-    if(!num){ alert('Ingresá un número.'); return; }
+    if(!/^\d{2}$/.test(num)){ alert('Ingresá un número de 00 a 99.'); return; }
+    if(this.isNumberBlocked(num)){ alert(`El número ${num} está bloqueado.`); return; }
     if(!amt || amt < 50 || amt % 50 !== 0){ alert('Mínimo ₡50 y múltiplos de 50.'); return; }
     if(!isNica && rev > 0 && (rev < 50 || rev % 50 !== 0)){ alert('Mínimo ₡50 y múltiplos de 50 para el reventado.'); return; }
     if(!isNica && rev > amt){ alert('El reventado no puede ser mayor que la apuesta.'); return; }
@@ -59,7 +64,7 @@ Object.assign(App, {
     document.getElementById('numInput').focus();
   },
 
-  removeLine(i){ this.currentLines.splice(i,1); this.renderLines(); },
+  removeLine(i){ if(this.savingSale) return; this.currentLines.splice(i,1); this.renderLines(); },
 
   renderLines(){
     const body = document.getElementById('linesBody');
@@ -78,6 +83,7 @@ Object.assign(App, {
   },
 
   async confirmSale(){
+    if(this.savingSale || !this.canUseNumberBlocks()) return;
     const btn = document.getElementById('btnConfirmSale');
     const drawObj = DRAWS.find(d=>d.name===document.getElementById('drawSelect').value);
     if(!drawObj || !isDrawOpen(drawObj, getCRTime())){ alert('Este sorteo ya cerró.'); return; }
@@ -89,11 +95,15 @@ Object.assign(App, {
     if(excedido){ alert(`El número ${excedido} supera el límite de ${money(this.maxBet)}.`); return; }
     const buyer = document.getElementById('buyerInput').value.trim() || 'Anónimo';
 
+    const lines = this.currentLines.map(l=>({...l}));
+    const blocked = lines.find(l=>this.isNumberBlocked(l.num));
+    if(blocked){ alert(`El número ${blocked.num} está bloqueado. Quitalo del tiquete para continuar.`); return; }
+    this.savingSale = true;
     btn.disabled = true;
     try {
       const seq = await this.getNextSeq('tiquetes');
       const id = `TSM-AAA-${String(seq).padStart(5,'0')}`;
-      const total = this.currentLines.reduce((s,l)=>s+l.amt+l.rev, 0);
+      const total = lines.reduce((s,l)=>s+l.amt+l.rev, 0);
       
       const movId = await this.getNextSeq('movimientos');
       const movData = {
@@ -111,14 +121,15 @@ Object.assign(App, {
         locked: false
       };
       
-      const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), movData);
+      const movRef = window.fs.doc(window.fs.collection(window.fs.db, 'movimientos'));
+      const ticketRef = window.fs.doc(window.fs.collection(window.fs.db, 'tiquetes'));
 
       const newTicket = {
         id, 
         draw: drawObj.name, 
         date: todayStr(), 
         crDate: crDateStr(),
-        lines: [...this.currentLines], 
+        lines,
         total, 
         buyer,
         vendor: this.currentProfile.name,
@@ -128,7 +139,15 @@ Object.assign(App, {
         movDocId: movRef.id
       };
 
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'tiquetes'), newTicket);
+      await window.fs.runTransaction(window.fs.db, async tx=>{
+        const snap = await tx.get(this.numberBlocksRef());
+        const blocks = this.readNumberBlocks(snap);
+        const blockedLine = lines.find(l=>this.isNumberBlocked(l.num, blocks));
+        if(blockedLine) throw new Error(`El número ${blockedLine.num} está bloqueado. Quitalo del tiquete para continuar.`);
+        if(!isDrawOpen(drawObj, getCRTime())) throw new Error('Este sorteo ya cerró.');
+        tx.set(movRef, movData);
+        tx.set(ticketRef, newTicket);
+      });
       
       this.currentLines = [];
       document.getElementById('buyerInput').value = '';
@@ -139,8 +158,9 @@ Object.assign(App, {
       this.switchTab('reportes');
     } catch(e) {
       console.error("Error al confirmar venta:", e);
-      alert("Error al confirmar venta.");
+      alert(e.message || "Error al confirmar venta.");
     } finally {
+      this.savingSale = false;
       btn.disabled = false;
     }
   },
