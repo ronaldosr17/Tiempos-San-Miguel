@@ -196,3 +196,38 @@ td{padding:8px; border-bottom:1px solid var(--navy-line);}
 .point-balances{display:grid; grid-template-columns:minmax(0,1fr); gap:10px; max-height:480px; overflow-y:auto;}
 .point-balances .m-label{overflow-wrap:anywhere;}
 .point-balances .m-value{font-size:17px; overflow-wrap:anywhere;}
+
+/* Finanzas del administrador */
+.admin-finances{display:block; max-width:1500px;}
+.admin-finances > div:not(#adminFinanceShell){display:none;}
+.admin-finances #adminFinanceShell{display:block;}
+.finance-heading{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px;}
+.finance-heading h2{font-size:25px;}
+.finance-heading p{font-size:13px; color:var(--text-muted); margin-top:6px;}
+.finance-filter-panel #movOwnerField{padding:0; border:0; margin-bottom:16px; background:none;}
+.finance-period-controls{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px;}
+.finance-period-controls .field{margin-bottom:0; min-width:0;}
+.finance-nav{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:20px;}
+.finance-nav button{background:var(--navy-surface); border:1px solid var(--navy-line); color:var(--text-muted); border-radius:8px; padding:10px 15px; cursor:pointer;}
+.finance-nav button.active{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+.finance-metrics{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
+.finance-metric{padding:17px;}
+.finance-metric span{display:block; color:var(--text-muted);font-size:12px;}
+.finance-metric strong{display:block;font-size:21px;margin-top:10px;overflow-wrap:anywhere;}
+.finance-overview-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:18px;align-items:start;}
+.finance-report-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start;}
+.finance-operations-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start;}
+.admin-finances #financeLifetimeSlot .module-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+.admin-finances .panel{overflow-x:auto;}
+.admin-finances #movToggleBtn,.admin-finances #movHistoryFilters{display:none!important;}
+.finance-notices p{padding:12px 16px;margin-bottom:12px;border:1px solid var(--navy-line);border-left:3px solid var(--gold);border-radius:8px;background:var(--navy-surface);font-size:13px;line-height:1.6;}
+.point-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.btn-small.danger{color:#fff;background:#983e36;border:1px solid #b8584e;}
+.point-removal-dialog{margin:auto;width:min(580px,calc(100% - 32px));max-height:85vh;overflow-y:auto;border:1px solid var(--navy-line);border-radius:14px;padding:24px;background:var(--navy-surface);color:var(--text);}
+.point-removal-dialog::backdrop{background:rgba(0,0,0,.65);}
+.point-removal-dialog h2{font-size:21px;margin-bottom:16px;}
+.point-removal-dialog p{line-height:1.65;font-size:13px;margin-bottom:14px;}
+#pointRemovalProgress{font-size:13px;line-height:1.6;overflow-wrap:anywhere;}
+.point-state{font-size:11px;color:var(--text-muted);margin-top:5px;}
+@media(max-width:1100px){.finance-overview-grid,.finance-report-grid{grid-template-columns:minmax(0,1fr);} .finance-operations-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);} .finance-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:600px){.finance-heading{align-items:flex-start;flex-direction:column;} .finance-period-controls{grid-template-columns:1fr 1fr;} .finance-operations-grid{grid-template-columns:minmax(0,1fr);} .finance-metric strong{font-size:17px;}}

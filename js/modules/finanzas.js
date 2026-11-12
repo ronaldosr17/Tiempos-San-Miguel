@@ -23,7 +23,7 @@ Object.assign(App, {
     
     try {
       const movId = await this.getNextSeq('movimientos');
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
+      await this.addPointRecord('movimientos', {
         id: 'M'+movId, date: todayStr(), crDate: crDateStr(), type: 'Gasto', 
         detail: detalleRaw ? `${categoria} · ${detalleRaw}` : categoria, 
         amount: -monto, owner, category: categoria, locked: false
@@ -55,7 +55,7 @@ Object.assign(App, {
 
     try {
       const movId = await this.getNextSeq('movimientos');
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
+      await this.addPointRecord('movimientos', {
         id: 'M' + movId, date: todayStr(), crDate: crDateStr(),
         type: tipo, category: tipo,
         detail: detalleRaw ? `${tipo} de caja · ${detalleRaw}` : `${tipo} de caja`,
@@ -84,7 +84,7 @@ Object.assign(App, {
       const seq = await this.getNextSeq('cierres');
       const idStr = 'C' + seq;
       
-      await window.fs.addDoc(window.fs.collection(window.fs.db, 'cierres'), {
+      await this.addPointRecord('cierres', {
         id: idStr, owner, crDate: crDateStr(), ts: new Date().toISOString(), 
         balance, efectivo, diferencia, registradoPor: this.currentProfile.name
       });
@@ -130,15 +130,22 @@ Object.assign(App, {
   },
 
   renderFinances(){
-    const hist = this.movShowHistory;
+    const admin = this.currentRole==='admin';
+    const hist = admin || this.movShowHistory;
     const today = crDateStr();
     // Los filtros solo cuentan cuando el historial está desplegado
-    const dateFrom = hist ? document.getElementById('movDateFrom').value : '';
-    const dateTo = hist ? document.getElementById('movDateTo').value : '';
-    const type = hist ? document.getElementById('movType').value : '';
+    const range = admin ? this.financeDateRange() : null;
+    const dateFrom = admin ? range.from : hist ? document.getElementById('movDateFrom').value : '';
+    const dateTo = admin ? range.to : hist ? document.getElementById('movDateTo').value : '';
+    const type = admin ? document.getElementById('financeType').value : hist ? document.getElementById('movType').value : '';
     const owner = this.selectedFinanceOwner();
 
+    const inPeriod = m=>{
+      const date = movDateKey(m);
+      return (!dateFrom || (date && date>=dateFrom)) && (!dateTo || (date && date<=dateTo)) && (!admin || range.valid);
+    };
     let list = this.movs.filter(m=>{
+      if(admin && !inPeriod(m)) return false;
       const mDate = movDateKey(m);
       if(!hist && mDate !== today) return false;
       if(dateFrom && mDate && mDate < dateFrom) return false;
@@ -171,7 +178,7 @@ Object.assign(App, {
       movEmpty.textContent = !hist ? 'Aún no hay movimientos de hoy'
         : (this.movs.length === 0 ? 'Aún no hay movimientos registrados' : 'No hay movimientos con esos filtros');
       document.getElementById('movHistoryFilters').classList.toggle('hidden', !hist);
-      document.getElementById('movTitle').textContent = hist ? 'Historial de movimientos' : 'Movimientos de hoy';
+      document.getElementById('movTitle').textContent = admin ? 'Movimientos del período' : hist ? 'Historial de movimientos' : 'Movimientos de hoy';
       document.getElementById('movToggleBtn').textContent = hist ? 'Solo hoy ▴' : 'Ver otros días ▾';
     }
 
@@ -201,9 +208,12 @@ Object.assign(App, {
     this.renderPointBalances();
     this.renderCierres();
 
-    this.renderCashMoves(filteredMovs);
-    this.renderDrawSummary(filteredMovs);
-    this.renderDaySummary(filteredMovs);
+    this.financeFilteredMovs = list;
+    const periodMovs = admin ? filteredMovs.filter(inPeriod) : filteredMovs;
+    this.renderCashMoves(admin ? periodMovs.filter(m=>!type || m.type===type) : filteredMovs);
+    this.renderDrawSummary(periodMovs);
+    this.renderDaySummary(periodMovs);
+    if(admin) this.renderAdminFinanceSummary(periodMovs, balance, owner);
   },
 
   // Apartado "Retiros y abonos": últimos 50 movimientos de ese tipo

@@ -103,7 +103,31 @@
   </div>
 
   <!-- FINANZAS -->
-  <div class="layout tab-panel hidden" data-tab="finanzas">
+  <div class="layout tab-panel hidden" data-tab="finanzas" id="financeTab">
+    <div class="hidden" id="adminFinanceShell">
+      <div class="finance-heading"><div><h2>Finanzas</h2><p>Caja, resultados y administración por punto de venta.</p></div><button class="btn-small" onclick="App.exportFinanceCSV()">Exportar movimientos CSV</button></div>
+      <div class="panel finance-filter-panel"><div id="financePointFilterSlot"></div><div class="finance-period-controls">
+        <div class="field"><label for="financePeriod">Período</label><select id="financePeriod" onchange="App.setFinancePeriod(this.value)"><option value="hoy">Hoy</option><option value="7">Últimos 7 días</option><option value="mes">Este mes</option><option value="todo">Todo el historial</option><option value="custom">Personalizado</option></select></div>
+        <div class="field"><label for="financeFrom">Desde</label><input id="financeFrom" type="date" onchange="App.onFinanceDatesChange()"></div>
+        <div class="field"><label for="financeTo">Hasta</label><input id="financeTo" type="date" onchange="App.onFinanceDatesChange()"></div>
+        <div class="field"><label for="financeType">Tipo en movimientos y CSV</label><select id="financeType" onchange="App.renderAll()"><option value="">Todos</option><option>Ingreso</option><option>Pago</option><option>Gasto</option><option>Retiro</option><option>Abono</option></select></div>
+      </div><div id="financeRangeError" class="error-msg hidden" role="alert"></div></div>
+      <nav class="finance-nav" aria-label="Apartados de finanzas"><button type="button" data-finance-view="resumen" onclick="App.switchFinanceView('resumen')">Resumen</button><button type="button" data-finance-view="movimientos" onclick="App.switchFinanceView('movimientos')">Movimientos</button><button type="button" data-finance-view="operaciones" onclick="App.switchFinanceView('operaciones')">Operaciones de caja</button><button type="button" data-finance-view="gestion" onclick="App.switchFinanceView('gestion')">Configuración y puntos</button></nav>
+      <div data-finance-panel="resumen">
+        <div class="finance-metrics" id="financePeriodMetrics" aria-live="polite"></div>
+        <div class="finance-notices" id="financeNotices" aria-live="polite"></div>
+        <div class="finance-overview-grid"><div id="financeLifetimeSlot"></div><div id="financePointsSlot"></div></div>
+        <div class="finance-report-grid"><div id="financeDrawsSlot"></div><div id="financeDaysSlot"></div></div>
+      </div>
+      <div data-finance-panel="movimientos" class="hidden"><div id="financeLedgerSlot"></div><div id="financeCashSlot"></div></div>
+      <div data-finance-panel="operaciones" class="hidden"><div class="finance-operations-grid"><div id="financeCashFormSlot"></div><div id="financeExpenseSlot"></div><div id="financeClosingSlot"></div></div></div>
+      <div data-finance-panel="gestion" class="hidden"><div class="finance-report-grid"><div id="financeLimitsSlot"></div><div class="panel point-removal-panel">
+        <h3>Administrar un punto de venta</h3><p class="block-help">Retirar un punto conserva su contabilidad. Eliminar sus datos borra únicamente los tiquetes, movimientos y cierres de ese punto.</p>
+        <div class="field"><label for="pointManageId">Punto de venta</label><select id="pointManageId" onchange="App.renderPointManagement()"><option value="">Elegí un punto de venta</option></select></div>
+        <div id="pointManageStatus" class="block-help" aria-live="polite"></div>
+        <div class="point-actions"><button class="btn-small" id="archivePointButton" onclick="App.openPointRemoval('archive')">Retirar punto, conservar historial</button><button class="btn-small hidden" id="restorePointButton" onclick="App.restoreManagedPoint()">Reactivar punto</button><button class="btn-small danger" id="purgePointButton" onclick="App.openPointRemoval('purge')">Eliminar punto y sus datos</button></div>
+      </div></div></div>
+    </div>
     <div>
       <div class="panel hidden" id="movOwnerField">
         <div class="field" style="margin:0;"><label for="movOwner">Punto de venta — balance y movimientos</label><select id="movOwner" onchange="App.renderAll()"><option value="">Todos los puntos de venta</option></select></div>
@@ -464,6 +488,18 @@
   </div>
 </section>
 
+<dialog id="pointRemovalDialog" class="point-removal-dialog" aria-labelledby="pointRemovalTitle">
+  <form onsubmit="event.preventDefault(); App.confirmPointRemoval();">
+    <h2 id="pointRemovalTitle">Confirmar eliminación</h2>
+    <p id="pointRemovalDescription"></p>
+    <div id="pointRemovalCounts" class="block-help"></div>
+    <p class="block-help">Solo se afecta el punto indicado. Las cuentas se conservan sin acceso a ese punto. Los demás negocios y los resultados de sorteos se conservan.</p>
+    <div class="field"><label for="pointRemovalText">Escribí exactamente <b>Delete</b> para confirmar</label><input id="pointRemovalText" autocomplete="off" spellcheck="false" oninput="App.updatePointRemovalConfirmation()"></div>
+    <p class="block-help">Para respaldar una caja sin nuevas operaciones durante la descarga, retirala primero conservando su historial.</p>
+    <div id="pointRemovalProgress" role="status" aria-live="polite"></div>
+    <div class="point-actions"><button type="button" class="btn-small" id="pointRemovalCancel" onclick="App.closePointRemoval()">Cancelar</button><button type="button" class="btn-small" id="pointRemovalBackup" onclick="App.downloadPointBackup()">Descargar respaldo JSON</button><button type="submit" class="btn-small danger" id="pointRemovalSubmit" disabled>Confirmar</button></div>
+  </form>
+</dialog>
 <script type="module" src="js/firebase.js"></script>
 
 <!-- ================= LÓGICA DE APLICACIÓN ================= -->
@@ -471,6 +507,8 @@
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
 <script src="js/modules/puntos.js"></script>
+<script src="js/modules/finanzas-admin.js"></script>
+<script src="js/modules/puntos-eliminar.js"></script>
 <script src="js/modules/sorteos.js"></script>
 <script src="js/modules/bloqueos.js"></script>
 <script src="js/modules/ventas.js"></script>

@@ -12,7 +12,7 @@ const checks=await page.evaluate(async()=>{
 const checks=[];const check=(value,msg)=>{if(!value)throw Error(msg);checks.push(msg);};
 window.alert=message=>window.lastAlert=message;window.confirm=()=>true;
 getCRTime=()=>({h:8,m:0,s:0});
-App.currentRole='admin';App.currentProfile={name:'Test'};App.numberBlocksReady=true;App.applyRoleUI('admin');
+App.pointsReady=true;App.currentRole='admin';App.currentProfile={name:'Test'};App.numberBlocksReady=true;App.applyRoleUI('admin');
 check(!document.getElementById('numberBlocksPanel').classList.contains('hidden'),'admin sees controls');
 let data={};let writes=[];
 const snap=()=>({exists:()=>true,data:()=>data,metadata:{fromCache:false}});

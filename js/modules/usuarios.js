@@ -10,7 +10,7 @@ Object.assign(App, {
     
     const puntoVentaId = role==='admin' ? null : document.getElementById('newUsrPoint').value;
     if(!['admin','vendedor'].includes(role)){ alert('Rol inválido.'); return; }
-    if(role==='vendedor' && (!this.pointsReady || !this.allPoints()[puntoVentaId])){ alert('Elegí un punto de venta y esperá a que se verifique el catálogo.'); return; }
+    if(role==='vendedor' && (!this.pointsReady || !this.pointIsActive(puntoVentaId))){ alert('Elegí un punto de venta y esperá a que se verifique el catálogo.'); return; }
     if(!email || !pass || !name){ alert('Completá todos los campos.'); return; }
     if(pass.length < 6){ alert('La contraseña debe tener al menos 6 caracteres.'); return; }
 

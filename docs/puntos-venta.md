@@ -93,7 +93,7 @@ para no eliminar validaciones o permisos que ya están en uso.
    otra caja, cambiar `puntoVentaId`, escribir catálogo o elevar su rol.
 
 No se han leído ni escrito datos reales de Firebase para esta implementación.
-No hay scripts de migración o borrado de datos.
+No hay migraciones automáticas. El retiro y borrado explícitos por punto se documentan en finanzas-admin-y-borrado.md.
 
 ## Pruebas locales
 

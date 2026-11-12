@@ -33,13 +33,24 @@ Object.assign(App, {
     if(!t || t.paid || !t.premiado || (this.currentRole!=='admin' && t.owner!==this.currentOwnerId())) return;
     try {
       const movId = await this.getNextSeq('movimientos');
-      const movRef = await window.fs.addDoc(window.fs.collection(window.fs.db, 'movimientos'), {
-        id: 'M'+movId, date: todayStr(), crDate: crDateStr(), type: 'Pago',
-        detail: `Pago a ganador ${t.id}`, amount: -(t.premio||0),
-        owner: t.owner, ticketId: t.id, draw: t.draw, locked: false
+      const movRef = window.fs.doc(window.fs.collection(window.fs.db, 'movimientos'));
+      await window.fs.runTransaction(window.fs.db, async tx=>{
+        await this.assertPointActive(tx,t.owner);
+        const ticketRef=window.fs.doc(window.fs.db,'tiquetes',t._id);
+        const snap=await tx.get(ticketRef);
+        if(!snap.exists())throw new Error('El tiquete ya no existe.');
+        const current=snap.data();
+        if(current.owner!==t.owner || current.paid || !current.premiado || current.status!=='registrada')throw new Error('El tiquete no está disponible para pago.');
+        if(!Number.isFinite(current.premio) || current.premio<=0)throw new Error('El premio del tiquete no es válido.');
+        if(crDateStr()>addDaysToDateStr(current.crDate,CLAIM_DAYS))throw new Error('El plazo de pago venció.');
+        tx.set(movRef, {
+          id:'M'+movId,date:todayStr(),crDate:crDateStr(),type:'Pago',
+          detail:`Pago a ganador ${t.id}`,amount:-Number(current.premio||0),
+          owner:current.owner,ticketId:t.id,draw:current.draw,locked:false
+        });
+        tx.update(ticketRef,{paid:true,payMovDocId:movRef.id});
       });
-      await window.fs.updateDoc(window.fs.doc(window.fs.db, 'tiquetes', t._id), { paid: true, payMovDocId: movRef.id });
       this.findTicketForPay();
-    } catch(e){ console.error(e); }
+    } catch(e){ console.error(e); alert(e.message || 'No se pudo registrar el pago.'); }
   }
 });
