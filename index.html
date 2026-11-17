@@ -39,6 +39,7 @@
         <button data-tab="pagos">Pagos</button>
         <button data-tab="reportes">Reportes</button>
         <button data-tab="resultados">Resultados</button>
+        <button data-tab="top-numeros" id="navTopNumeros" class="hidden">Top Números</button>
         <button data-tab="usuarios" id="navUsuarios" class="hidden">Usuarios</button>
       </div>
       <div class="sidebar-foot">
@@ -449,6 +450,31 @@
     </div>
   </div>
 
+  <!-- TOP NÚMEROS (ADMIN) -->
+  <div class="tab-panel top-numbers-page hidden" data-tab="top-numeros" id="topNumbersPanel">
+    <div class="finance-heading"><div><h2>Top Números</h2><p>Frecuencia de resultados, popularidad y concentración de apuestas.</p></div></div>
+    <div class="panel">
+      <div class="top-number-filters">
+        <div class="field"><label for="topPeriod">Período</label><select id="topPeriod" onchange="App.setTopPeriod(this.value)"><option value="30">Últimos 30 días</option><option value="hoy">Hoy</option><option value="7">Últimos 7 días</option><option value="todo">Todo el historial</option><option value="custom">Personalizado</option></select></div>
+        <div class="field"><label for="topFrom">Desde</label><input id="topFrom" type="date" onchange="App.onTopDatesChange()"></div>
+        <div class="field"><label for="topTo">Hasta</label><input id="topTo" type="date" onchange="App.onTopDatesChange()"></div>
+        <div class="field"><label for="topFamily">Sorteo</label><select id="topFamily" onchange="App.renderTopNumbers()"><option value="">Todos</option><option value="tica">Tica · todos los horarios</option><option value="nica">Nica · todos los horarios</option><option value="primera">La Primera · todos los horarios</option></select></div>
+        <div class="field"><label for="topOwner">Apuestas del punto de venta</label><select id="topOwner" onchange="App.renderTopNumbers()"><option value="">Todos los puntos de venta</option></select></div>
+        <div class="field"><label for="topLimit">Mostrar</label><select id="topLimit" onchange="App.renderTopNumbers()"><option value="10">Top 10</option><option value="20">Top 20</option><option value="100">Todos los números con datos</option></select></div>
+      </div>
+      <p class="block-help">Los resultados son generales; el filtro de punto solo afecta las apuestas. Estas listas describen el historial registrado, no predicen el próximo resultado.</p>
+      <div id="topNumbersStatus" class="block-help" role="status" aria-live="polite"></div>
+    </div>
+    <div class="finance-metrics" id="topNumbersSummary"></div>
+    <div class="top-number-rankings">
+      <section class="panel"><h3>Más veces ganadores</h3><p class="block-help">Veces que salió cada número en los sorteos del período.</p><div class="top-table-wrap" id="topResultsRanking"></div></section>
+      <section class="panel"><h3>Más jugados</h3><p class="block-help">Cantidad de tiquetes distintos que incluyen el número.</p><div class="top-table-wrap" id="topPlayedRanking"></div></section>
+      <section class="panel"><h3>Más dinero apostado</h3><p class="block-help">Monto directo + reventado; participación sobre el total seleccionado.</p><div class="top-table-wrap" id="topMoneyRanking"></div></section>
+    </div>
+    <section class="panel"><h3>Riesgo de hoy · sorteos sin resultado</h3><p class="block-help">Premio máximo posible por número y horario, si acierta y en Tica sale bola reventada. No es un pago pendiente ni se descuenta de caja. Usa hoy, el sorteo y el punto elegidos; no el período histórico.</p><div class="top-table-wrap" id="topExposureRanking"></div></section>
+    <p class="block-help">Para preparar un bloqueo desde las listas, elegí Tica, Nica o La Primera en el filtro. El bloqueo solo se guarda cuando elegís su vencimiento y lo confirmás en Reportes.</p>
+  </div>
+
   <!-- GESTIÓN DE USUARIOS (ADMIN) -->
   <div class="layout tab-panel hidden" data-tab="usuarios">
     <div>
@@ -517,5 +543,6 @@
 <script src="js/modules/finanzas.js"></script>
 <script src="js/modules/reportes.js"></script>
 <script src="js/modules/usuarios.js"></script>
+<script src="js/modules/top-numeros.js"></script>
 </body>
 </html>

@@ -72,6 +72,7 @@ Object.assign(App, {
     const signature = `${this.numberBlocksReady}|${this.currentRole}|${active.map(n=>n+this.numberBlocks[n].hasta).join('|')}`;
     if(sales && sales.dataset.signature !== signature){
       sales.dataset.signature = signature;
+      this.renderTopNumbers();
       sales.replaceChildren();
       if(!this.numberBlocksReady){
         sales.textContent = 'Esperando conexión para verificar bloqueos.';
