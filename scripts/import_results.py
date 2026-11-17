@@ -31,30 +31,37 @@ def normalize(value):
     return ' '.join(value.split()).upper()
 
 
+class ResultsValidationError(ValueError):
+    """Conserva los sorteos válidos aunque otro grupo requiera revisión."""
+    def __init__(self, errors, results, notes):
+        super().__init__('; '.join(errors))
+        self.errors, self.results, self.notes = errors, results, notes
+
+
 def parse_results(html, now):
-    """No usa las horas ambiguas del sitio; usa cierre y zona horaria del catálogo."""
+    """Agrupa duplicados antes de validar; nunca adivina un número o una bola."""
     soup = BeautifulSoup(html, 'html.parser')
     cards = soup.select('.result-card')
     if not cards:
-        # Una página de resultados reconocible puede estar vacía al iniciar el día.
-        # No confundirla con páginas de bloqueo, acceso o una estructura desconocida.
         heading = soup.select_one('.results-filter h1')
         date_input = soup.select_one('.results-filter input#datepicker[type="date"]')
         if (heading and normalize(heading.get_text()) == 'RESULTADOS DE LOTERIAS'
                 and date_input and date_input.get('value') == now.date().isoformat()):
             return [], ['Página válida de hoy, todavía sin resultados publicados']
         raise ValueError('No se encontraron tarjetas ni una página vacía válida; revisar respuesta del sitio.')
-    results, notes, seen = [], [], set()
+    results, notes, groups = [], [], {}
     for card in cards:
         title = card.select_one('.card-header span')
         source_name = normalize(title.get_text(' ', strip=True)) if title else ''
         if source_name not in DRAWS:
             continue
         draw, hour, minute, reventado, weekend = DRAWS[source_name]
+        group = groups.setdefault(source_name, {'candidates': [], 'errors': []})
         footer = card.select_one('.card-footer')
         dates = re.findall(r'\b\d{4}-\d{2}-\d{2}\b', footer.get_text() if footer else '')
         if len(dates) != 1:
-            raise ValueError(f'Fecha ausente o ambigua: {source_name}')
+            group['errors'].append('fecha ausente o ambigua')
+            continue
         date = dates[0]
         if date != now.date().isoformat():
             notes.append(f'{source_name}: fecha distinta de hoy; omitido')
@@ -62,23 +69,37 @@ def parse_results(html, now):
         if weekend and now.weekday() < 5:
             notes.append(f'{source_name}: solo fines de semana según catálogo; omitido')
             continue
-        # Un resultado válido publicado antes del horario también debe detener ventas.
-        if source_name in seen:
-            raise ValueError(f'Tarjeta duplicada: {source_name}')
-        seen.add(source_name)
         values = [normalize(b.get_text()) for b in card.select('.card-body button')]
-        expected = 2 if reventado else 1
-        if len(values) != expected or not re.fullmatch(r'\d{2}', values[0]):
-            raise ValueError(f'Número o estructura no válidos: {source_name}')
-        if reventado and values[1] not in ('BB', 'BR'):
-            raise ValueError(f'Falta BB/BR válido: {source_name}')
-        results.append({
-            'draw': draw, 'crDate': date, 'numero': values[0],
-            'numeroReventadoType': values[1].lower() if reventado else 'N/A',
-        })
-    found = {normalize(t.get_text()) for t in soup.select('.result-card .card-header span')}
-    for name in DRAWS.keys() - found:
+        if not values or not re.fullmatch(r'\d{2}', values[0]) or len(values) > (2 if reventado else 1):
+            group['errors'].append('número o estructura no válidos')
+            continue
+        if reventado and len(values) == 2 and values[1] not in ('BB', 'BR'):
+            group['errors'].append('bola distinta de BB/BR')
+            continue
+        # Una tarjeta Tica de un solo número es parcial, nunca equivale a BB.
+        ball = values[1].lower() if reventado and len(values) == 2 else None if reventado else 'N/A'
+        group['candidates'].append({'draw': draw, 'crDate': date, 'numero': values[0], 'numeroReventadoType': ball})
+    errors = []
+    for name, group in groups.items():
+        candidates, problems = group['candidates'], group['errors']
+        complete = [c for c in candidates if c['numeroReventadoType'] is not None]
+        if len({c['numero'] for c in candidates}) > 1:
+            problems.append('tarjetas con números contradictorios')
+        if len({c['numeroReventadoType'] for c in complete}) > 1:
+            problems.append('tarjetas con bolas contradictorias')
+        if candidates and not complete:
+            problems.append('falta BB/BR; no se importa hasta que se publique completo')
+        if problems:
+            errors.append(f'{name}: '+', '.join(dict.fromkeys(problems)))
+            continue
+        if complete:
+            results.append(complete[0])
+            if len(candidates) > 1:
+                notes.append(f'{name}: {len(candidates)} tarjetas coincidentes; se usa una sola versión completa')
+    for name in sorted(DRAWS.keys() - groups.keys()):
         notes.append(f'{name}: no publicado; no se inventa resultado')
+    if errors:
+        raise ResultsValidationError(errors, results, notes)
     return results, notes
 
 
@@ -186,10 +207,19 @@ def main():
             html = response.read(2_000_001)
             if len(html) > 2_000_000:
                 raise ValueError('Respuesta demasiado grande')
-    results, notes = parse_results(html, now)
+    parse_failed = False
+    try:
+        results, notes = parse_results(html, now)
+    except ResultsValidationError as exc:
+        results, notes = exc.results, exc.notes
+        parse_failed = True
+        for error in exc.errors:
+            print('ERROR DE ORIGEN: '+error, file=sys.stderr)
     for note in notes:
         print('AVISO:', note)
     if not results:
+        if parse_failed:
+            raise RuntimeError('Sin sorteos completos válidos; revisar los errores del origen. No se escribió nada.')
         print('PENDIENTE: ningún resultado elegible de hoy; sin escrituras. Se revisará en la próxima ejecución.')
         return
     db = None
@@ -199,7 +229,7 @@ def main():
         if project != 'tiempos-san-miguel':
             raise ValueError('GCP_PROJECT_ID debe ser tiempos-san-miguel')
         db = firestore.Client(project=project)
-    failed = False
+    failed = parse_failed
     for result in results:
         try:
             status = import_one(db, result, args.apply) if db else 'extraído (sin conexión a Firebase)'

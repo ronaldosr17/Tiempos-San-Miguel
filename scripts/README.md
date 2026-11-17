@@ -44,6 +44,7 @@ workflow desde Actions. El ingreso manual de resultados permanece disponible.
 - Nica 6 PM solo fines de semana, como indica el catálogo de la aplicación.
 - Nica 9 PM no apareció al inspeccionar el origen. Solo se importará si aparece
   una tarjeta exacta `NICA 9 PM`; mientras tanto debe ingresarse manualmente.
+- Reconcilia tarjetas duplicadas solo si coinciden: prefiere la versión completa y nunca adivina BB/BR. Un sorteo inválido no impide procesar los demás válidos, pero la ejecución reporta error para revisión.
 - No inventa resultados ausentes ni reemplaza resultados existentes. Los resultados
   existentes iguales se omiten; los distintos hacen fallar la ejecución y se reportan.
 - Cada sorteo nuevo confirma resultado y premios en una transacción. Solo si se

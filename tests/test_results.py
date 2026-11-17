@@ -42,9 +42,8 @@ class ResultsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.parse(card(number=number))
 
-    def test_duplicate_rejected(self):
-        with self.assertRaises(ValueError):
-            self.parse(card() + card())
+    def test_identical_duplicates_import_once(self):
+        self.assertEqual(len(self.parse(card() + card())), 1)
 
     def test_structure_change_rejected(self):
         with self.assertRaises(ValueError):
@@ -221,3 +220,93 @@ class EarlyClosureTests(unittest.TestCase):
         db = tests.fake_db()
         tests.run_import(db, now=ResultsTests.now.replace(hour=12, minute=55))
         db.transaction.return_value.set.assert_not_called()
+
+
+class DuplicateSourceTests(unittest.TestCase):
+    def parse(self, html):
+        return parse_results(html, ResultsTests.now)[0]
+
+    def test_partial_then_complete_tica(self):
+        results = self.parse(card(number='29', ball=None) + card(number='29', ball='BB'))
+        self.assertEqual(len(results), 1)
+        self.assertEqual((results[0]['numero'], results[0]['numeroReventadoType']), ('29', 'bb'))
+
+    def test_complete_then_partial_tica(self):
+        results = self.parse(card(number='29', ball='BR') + card(number='29', ball=None))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['numeroReventadoType'], 'br')
+
+    def test_conflicting_number_does_not_choose_a_winner(self):
+        from import_results import ResultsValidationError
+        with self.assertRaises(ResultsValidationError) as caught:
+            self.parse(card(number='29', ball='BB') + card(number='30', ball=None))
+        self.assertEqual(caught.exception.results, [])
+        self.assertIn('contradictorios', str(caught.exception))
+
+    def test_conflicting_balls_do_not_choose_one(self):
+        from import_results import ResultsValidationError
+        with self.assertRaises(ResultsValidationError) as caught:
+            self.parse(card(ball='BB') + card(ball='BR'))
+        self.assertEqual(caught.exception.results, [])
+
+    def test_partial_tica_keeps_healthy_other_draw(self):
+        from import_results import ResultsValidationError
+        with self.assertRaises(ResultsValidationError) as caught:
+            self.parse(card(ball=None) + card(name='NICA 11 AM', number='00', ball=None))
+        self.assertEqual(len(caught.exception.results), 1)
+        self.assertEqual(caught.exception.results[0]['draw'], 'Nica Mañana (11:00 AM)')
+        self.assertEqual(caught.exception.results[0]['numero'], '00')
+
+    def test_invalid_card_does_not_hide_behind_complete_duplicate(self):
+        from import_results import ResultsValidationError
+        with self.assertRaises(ResultsValidationError) as caught:
+            self.parse(card(number='XX') + card(number='05'))
+        self.assertEqual(caught.exception.results, [])
+
+    def test_invalid_date_is_isolated(self):
+        from import_results import ResultsValidationError
+        with self.assertRaises(ResultsValidationError) as caught:
+            self.parse(card(date='') + card(name='LA PRIMERA 10 AM', ball=None))
+        self.assertEqual(len(caught.exception.results), 1)
+        self.assertEqual(caught.exception.results[0]['draw'], 'La Primera (10:00 AM)')
+
+    def test_duplicate_non_reventado_draw_imports_once(self):
+        row = card(name='NICA 11 AM', number='00', ball=None)
+        self.assertEqual(len(self.parse(row + row)), 1)
+
+    def test_actual_november_16_source_regression(self):
+        html = (Path(__file__).parent / 'fixtures/resultados_2026_11_16.html').read_text()
+        results, notes = parse_results(html, datetime(2026, 11, 16, 21, 57, tzinfo=TZ))
+        self.assertEqual(len(results), 3)
+        tica = [r for r in results if r['draw'] == 'Tica Tarde (4:30 PM)']
+        self.assertEqual(len(tica), 1)
+        self.assertEqual((tica[0]['numero'], tica[0]['numeroReventadoType']), ('29', 'bb'))
+        self.assertTrue(any('2 tarjetas coincidentes' in note for note in notes))
+
+    def test_main_imports_valid_draws_before_reporting_other_source_error(self):
+        import import_results as module
+        from unittest.mock import patch, MagicMock
+        response = MagicMock()
+        response.headers = {'Content-Type': 'text/html'}
+        response.read.return_value = (card(ball=None) + card(name='NICA 11 AM', ball=None)).encode()
+        with patch.object(module.sys, 'argv', ['import_results.py', '--apply']), patch.object(module, 'datetime') as clock, patch.dict(module.os.environ, {'GCP_PROJECT_ID': 'tiempos-san-miguel', 'GITHUB_EVENT_NAME': 'workflow_dispatch'}), patch.object(module, 'urlopen') as fetch, patch('google.cloud.firestore.Client') as client, patch.object(module, 'import_one', return_value='importado') as save:
+            clock.now.return_value = ResultsTests.now
+            fetch.return_value.__enter__.return_value = response
+            with self.assertRaises(RuntimeError):
+                module.main()
+            save.assert_called_once()
+            self.assertEqual(save.call_args.args[1]['draw'], 'Nica Mañana (11:00 AM)')
+            self.assertTrue(save.call_args.args[2])
+
+    def test_main_with_no_valid_results_never_opens_firestore(self):
+        import import_results as module
+        from unittest.mock import patch, MagicMock
+        response = MagicMock()
+        response.headers = {'Content-Type': 'text/html'}
+        response.read.return_value = card(ball=None).encode()
+        with patch.object(module.sys, 'argv', ['import_results.py', '--apply']), patch.object(module, 'datetime') as clock, patch.dict(module.os.environ, {'GCP_PROJECT_ID': 'tiempos-san-miguel', 'GITHUB_EVENT_NAME': 'workflow_dispatch'}), patch.object(module, 'urlopen') as fetch, patch('google.cloud.firestore.Client') as client:
+            clock.now.return_value = ResultsTests.now
+            fetch.return_value.__enter__.return_value = response
+            with self.assertRaises(RuntimeError):
+                module.main()
+            client.assert_not_called()
