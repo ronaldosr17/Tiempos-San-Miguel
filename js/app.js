@@ -23,6 +23,7 @@ const App = {
     this.populateResultDrawSelect();
     this.populateReportDrawSelect();
     this.populateNumerosDrawSelect();
+    this.setTopPeriod('30', false);
     this.tickClock();
     setInterval(()=>this.tickClock(), 1000);
 
@@ -128,6 +129,8 @@ const App = {
     this.unsubscribes.forEach(u => u());
     this.unsubscribes = [];
     this.tickets = []; this.movs = []; this.results = []; this.cierres = []; this.closures = [];
+    this.topSources = {};
+    this.clearTopNumbers();
     this.points = {}; this.pointsReady = false;
     this.renderPointSelectors();
     this.numberBlocks = {}; this.numberBlocksReady = false;
@@ -156,9 +159,10 @@ const App = {
     let qTiquetes = window.fs.collection(window.fs.db, 'tiquetes');
     if (!isAdmin) qTiquetes = window.fs.query(qTiquetes, window.fs.where('owner', '==', ownerId));
     const unsubTiq = window.fs.onSnapshot(qTiquetes, (snap) => {
+      this.topSources.tickets = snap.metadata?.fromCache ? 'cache' : 'ready';
       this.tickets = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       this.renderAll();
-    });
+    }, error=>this.topSourceError('tickets',error));
     this.unsubscribes.push(unsubTiq);
 
     let qMovs = window.fs.collection(window.fs.db, 'movimientos');
@@ -170,10 +174,11 @@ const App = {
     this.unsubscribes.push(unsubMov);
 
     const unsubRes = window.fs.onSnapshot(window.fs.collection(window.fs.db, 'resultados'), (snap) => {
+      this.topSources.results = snap.metadata?.fromCache ? 'cache' : 'ready';
       this.results = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       this.renderResults();
       this.renderAll();
-    });
+    }, error=>this.topSourceError('results',error));
     this.unsubscribes.push(unsubRes);
 
     let qCierres = window.fs.collection(window.fs.db, 'cierres');
@@ -211,6 +216,8 @@ const App = {
 
   applyRoleUI(role){
     const isAdmin = role === 'admin';
+    document.getElementById('navTopNumeros').classList.toggle('hidden', !isAdmin);
+    if(!isAdmin){ document.getElementById('topNumbersPanel').classList.add('hidden'); this.clearTopNumbers(); }
     document.getElementById('numberBlocksPanel').classList.toggle('hidden', !isAdmin);
     const ventasBtn = document.querySelector('.nav-links button[data-tab="ventas"]');
     if(ventasBtn) ventasBtn.style.display = isAdmin ? 'none' : '';
@@ -234,8 +241,10 @@ const App = {
   },
 
   switchTab(tab){
+    if(tab==='top-numeros' && this.currentRole!=='admin') return;
     document.querySelectorAll('.nav-links button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('hidden', p.dataset.tab!==tab));
+    if(tab==='top-numeros') this.renderTopNumbers();
   },
 
   tickClock(){
@@ -258,6 +267,7 @@ const App = {
     this.renderFinances();
     this.renderReports();
     this.renderDashboardSummary();
+    this.renderTopNumbers();
   }
 };
 

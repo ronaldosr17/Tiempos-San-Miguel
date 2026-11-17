@@ -62,15 +62,15 @@ Object.assign(App, {
 
   renderPointSelectors(){
     const options = Object.entries(this.allPoints()).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'));
-    ['movOwner','gastoOwner','cierreOwner','retiroOwner','newUsrPoint','pointEditId','repOwner','pointManageId'].forEach(id=>{
+    ['movOwner','gastoOwner','cierreOwner','retiroOwner','newUsrPoint','pointEditId','repOwner','pointManageId','topOwner'].forEach(id=>{
       const select = document.getElementById(id);
       if(!select) return;
       const previous = select.value;
-      const placeholder = id==='pointEditId' ? 'Crear un punto nuevo' : ['movOwner','repOwner'].includes(id) ? 'Todos los puntos de venta' : 'Elegí un punto de venta';
+      const placeholder = id==='pointEditId' ? 'Crear un punto nuevo' : ['movOwner','repOwner','topOwner'].includes(id) ? 'Todos los puntos de venta' : 'Elegí un punto de venta';
       const items = [new Option(placeholder,'')];
       options.forEach(([key,point])=>{
         const state=point.estado||'activo';
-        const history=['movOwner','repOwner'].includes(id);
+        const history=['movOwner','repOwner','topOwner'].includes(id);
         const manage=id==='pointManageId';
         const edit=id==='pointEditId';
         if(!history && !manage && !edit && state!=='activo')return;
@@ -79,7 +79,7 @@ Object.assign(App, {
         items.push(new Option(point.nombre+(state!=='activo' ? ' · '+state : ''),key));
       });
       // Mantener visible cualquier caja histórica no presente en el catálogo.
-      if(['movOwner','repOwner'].includes(id)){
+      if(['movOwner','repOwner','topOwner'].includes(id)){
         const records = id==='movOwner' ? this.movs : this.tickets;
         [...new Set(records.map(r=>r.owner))].filter(key=>key && !this.allPoints()[key]).sort().forEach(key=>items.push(new Option(key,key)));
       }
