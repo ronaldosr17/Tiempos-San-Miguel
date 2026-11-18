@@ -43,6 +43,7 @@ Object.assign(App, {
     if(!/^\d{2}$/.test(num)){ alert('Ingresá un número de 00 a 99.'); return; }
     if(this.isNumberBlocked(num, draw.name)){ alert(`El número ${num} está bloqueado.`); return; }
     if(!amt || amt < 50 || amt % 50 !== 0){ alert('Mínimo ₡50 y múltiplos de 50.'); return; }
+    if(!Number.isFinite(amt) || !Number.isFinite(rev) || rev < 0){ alert('Ingresá montos válidos y no negativos.'); return; }
     if(!isNica && rev > 0 && (rev < 50 || rev % 50 !== 0)){ alert('Mínimo ₡50 y múltiplos de 50 para el reventado.'); return; }
     if(!isNica && rev > amt){ alert('El reventado no puede ser mayor que la apuesta.'); return; }
     
@@ -51,6 +52,8 @@ Object.assign(App, {
       alert(`Límite superado. El máximo por número es ${money(this.maxBet)}.`);
       return;
     }
+    const limitError = this.temporaryLimitError([...this.currentLines, {num,amt,rev}], draw.name);
+    if(limitError){ alert(limitError); return; }
     const existente = this.currentLines.find(l=>l.num===num);
     if(existente){
       existente.amt += amt;
@@ -93,6 +96,8 @@ Object.assign(App, {
     this.currentLines.forEach(l=>{ porNumero[l.num] = (porNumero[l.num]||0) + l.amt + l.rev; });
     const excedido = Object.keys(porNumero).find(n => porNumero[n] > this.maxBet);
     if(excedido){ alert(`El número ${excedido} supera el límite de ${money(this.maxBet)}.`); return; }
+    const limitError = this.temporaryLimitError(this.currentLines, drawObj.name);
+    if(limitError){ alert(limitError); return; }
     const buyer = document.getElementById('buyerInput').value.trim() || 'Anónimo';
 
     const owner = this.financeOwner('gastoOwner');
@@ -145,6 +150,8 @@ Object.assign(App, {
         await this.assertPointActive(tx, owner);
         const snap = await tx.get(this.numberBlocksRef());
         const blocks = this.readNumberBlocks(snap);
+        const remoteLimitError = this.temporaryLimitError(lines, drawObj.name, this.readTemporaryLimits(snap));
+        if(remoteLimitError) throw new Error(remoteLimitError);
         const blockedLine = lines.find(l=>this.isNumberBlocked(l.num, drawObj.name, blocks));
         if(blockedLine) throw new Error(`El número ${blockedLine.num} está bloqueado. Quitalo del tiquete para continuar.`);
         if(!isDrawOpen(drawObj, getCRTime())) throw new Error('Este sorteo ya cerró.');

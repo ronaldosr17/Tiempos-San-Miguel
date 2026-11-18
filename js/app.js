@@ -133,7 +133,7 @@ const App = {
     this.clearTopNumbers();
     this.points = {}; this.pointsReady = false;
     this.renderPointSelectors();
-    this.numberBlocks = {}; this.numberBlocksReady = false;
+    this.numberBlocks = {}; this.numberBlocksReady = false; this.temporaryLimits = {};
     this.renderNumberBlocks();
   },
 
@@ -219,6 +219,7 @@ const App = {
     document.getElementById('navTopNumeros').classList.toggle('hidden', !isAdmin);
     if(!isAdmin){ document.getElementById('topNumbersPanel').classList.add('hidden'); this.clearTopNumbers(); }
     document.getElementById('numberBlocksPanel').classList.toggle('hidden', !isAdmin);
+    document.getElementById('temporaryLimitsPanel').classList.toggle('hidden', !isAdmin);
     const ventasBtn = document.querySelector('.nav-links button[data-tab="ventas"]');
     if(ventasBtn) ventasBtn.style.display = isAdmin ? 'none' : '';
     const resBtn = document.querySelector('.nav-links button[data-tab="resultados"]');
