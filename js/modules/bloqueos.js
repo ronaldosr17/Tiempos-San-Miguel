@@ -50,6 +50,7 @@ Object.assign(App, {
     const unsub = window.fs.onSnapshot(this.numberBlocksRef(), {includeMetadataChanges:true}, snap=>{
       try {
         this.numberBlocks = this.readNumberBlocks(snap);
+        this.temporaryLimits = this.readTemporaryLimits(snap);
         // La caché local no confirma si otro negocio recibió un bloqueo nuevo.
         this.numberBlocksReady = !snap.metadata.fromCache;
       } catch(e){
@@ -66,6 +67,7 @@ Object.assign(App, {
   },
 
   renderNumberBlocks(){
+    this.renderTemporaryLimits();
     const active = Object.keys(this.numberBlocks).filter(key=>Date.parse(this.numberBlocks[key].hasta)>Date.now()).sort();
     const sales = document.getElementById('blockedNumbersSales');
     const admin = document.getElementById('numberBlocksAdmin');
@@ -123,9 +125,10 @@ Object.assign(App, {
     try {
       await window.fs.runTransaction(window.fs.db, async tx=>{
         const ref = this.numberBlocksRef();
-        const blocks = this.readNumberBlocks(await tx.get(ref));
+        const snap = await tx.get(ref);
+        const blocks = this.readNumberBlocks(snap);
         blocks[`${family}_${num}`] = {hasta:new Date(end).toISOString()};
-        tx.set(ref, {tipo:'bloqueos_numeros', numeros:blocks});
+        tx.set(ref, {...(snap.exists()?snap.data():{}), tipo:'bloqueos_numeros', numeros:blocks});
       });
       document.getElementById('blockNumber').value = '';
       document.getElementById('blockUntil').value = '';
@@ -139,9 +142,10 @@ Object.assign(App, {
     try {
       await window.fs.runTransaction(window.fs.db, async tx=>{
         const ref = this.numberBlocksRef();
-        const blocks = this.readNumberBlocks(await tx.get(ref));
+        const snap = await tx.get(ref);
+        const blocks = this.readNumberBlocks(snap);
         delete blocks[`${family}_${num}`];
-        tx.set(ref, {tipo:'bloqueos_numeros', numeros:blocks});
+        tx.set(ref, {...(snap.exists()?snap.data():{}), tipo:'bloqueos_numeros', numeros:blocks});
       });
     } catch(e){ console.error(e); alert('No se pudo desbloquear el número.'); }
   }

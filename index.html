@@ -60,6 +60,7 @@
       <div class="panel number-blocks-panel">
         <h3>Números bloqueados</h3>
         <div id="blockedNumbersSales" aria-live="polite">Cargando…</div>
+        <section class="temporary-limits-notice"><h3>Límites temporales</h3><div id="temporaryLimitsSales" aria-live="polite">Cargando…</div></section>
       </div>
     </div>
     <div>
@@ -329,6 +330,19 @@
         </form>
         <div id="numberBlocksAdmin" aria-live="polite"></div>
       </div>
+      <div class="panel hidden" id="temporaryLimitsPanel">
+        <h3>Límite temporal de apuestas</h3>
+        <p class="block-help">Por número (00–99) y por tiquete, en todos los horarios de la familia elegida. Se mantiene también el límite general de directo + reventado. Al vencer, vuelve a regir el límite general.</p>
+        <form onsubmit="event.preventDefault(); App.saveTemporaryLimit();" class="temporary-limit-form">
+          <div class="field"><label for="temporaryLimitFamily">Sorteo</label><select id="temporaryLimitFamily" onchange="App.updateTemporaryLimitForm()"><option value="tica">Tica</option><option value="nica">Nica</option><option value="primera">La Primera</option></select></div>
+          <div class="field"><label for="temporaryLimitDirect">Máximo directo por número</label><input id="temporaryLimitDirect" type="number" min="50" step="50" required></div>
+          <div class="field" id="temporaryLimitRevField"><label for="temporaryLimitRev">Máximo reventado por número (0 = no permitir)</label><input id="temporaryLimitRev" type="number" min="0" step="50" value="0"></div>
+          <div class="field"><label for="temporaryLimitUntil">Vigente hasta (hora Costa Rica)</label><input id="temporaryLimitUntil" type="datetime-local" required></div>
+          <div class="field"><label for="temporaryLimitReason">Motivo visible para vendedores</label><input id="temporaryLimitReason" maxlength="200" required placeholder="Ej. Control de exposición"></div>
+          <button class="btn-small gold" id="saveTemporaryLimit" type="submit">Guardar límite temporal</button>
+        </form>
+        <div id="temporaryLimitsAdmin" aria-live="polite"></div>
+      </div>
       <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
           <h3 id="repTitle" style="margin:0;">Tiquetes de hoy</h3>
@@ -537,6 +551,7 @@
 <script src="js/modules/puntos-eliminar.js"></script>
 <script src="js/modules/sorteos.js"></script>
 <script src="js/modules/bloqueos.js"></script>
+<script src="js/modules/limites-temporales.js"></script>
 <script src="js/modules/ventas.js"></script>
 <script src="js/modules/resultados.js"></script>
 <script src="js/modules/pagos.js"></script>
